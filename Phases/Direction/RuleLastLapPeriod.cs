@@ -70,9 +70,8 @@ namespace iRacingReplayDirector.Phases.Direction
 
         void SwitchToFinishingDrivers(DataSample data)
         {
-            var session = data.SessionData.SessionInfo.Sessions[data.Telemetry.SessionNum];
-
-            if (lastFinisherCarIdx != -1 && !data.Telemetry.Cars[lastFinisherCarIdx].HasSeenCheckeredFlag)
+            var currentFinisher = lastFinisherCarIdx < 0 ? null : data.Telemetry.Cars[lastFinisherCarIdx];
+            if (currentFinisher != null && !currentFinisher.HasSeenCheckeredFlag && !currentFinisher.HasRetired)
             {
                 timeOfFinisher = DateTime.Now.AddSeconds(2.0 * Settings.AppliedTimingFactor);
                 return;
@@ -84,18 +83,15 @@ namespace iRacingReplayDirector.Phases.Direction
             Car nextFinisher;
 
             if (!data.Telemetry.LeaderHasFinished)
-                nextFinisher = data.Telemetry.Cars
+                nextFinisher = data.Telemetry.RaceCars
                     .OrderBy(c => c.Position)
-                    .Where(c => c.Details.Driver != null)
                     .Where(c => c.HasData)
-                    .First();
+                    .FirstOrDefault();
             else
-                nextFinisher = data.Telemetry.Cars
+                nextFinisher = data.Telemetry.RaceCars
                         .Where(c => c.TotalDistance > 0)
                         .Where(c => !c.HasSeenCheckeredFlag)
-                        .Where(c => !c.Details.IsPaceCar)
                         .Where(c => c.HasData)
-                        .Where(c => c.Details.Driver != null)
                         .Where(c => c.TrackSurface == TrackLocation.OnTrack)
                         .OrderByDescending(c => c.DistancePercentage)
                         .ThenBy(c => c.OfficialPostion == 0 ? int.MaxValue : c.OfficialPostion)

@@ -82,7 +82,7 @@ namespace iRacingReplayDirector.Phases.Capturing
 
             var car = data.Telemetry.CamCar;
 
-            var position = GetPositionFor(data, car.Details);
+            var position = GetPositionFor(data, car);
 
             var driver = new OverlayData.Driver
             {
@@ -97,9 +97,14 @@ namespace iRacingReplayDirector.Phases.Capturing
             return driver;
         }
 
-        private static int? GetPositionFor(DataSample data, CarDetails carDetails)
+        private static int? GetPositionFor(DataSample data, Car car)
         {
-            var car = carDetails.Car(data);
+            if (data.Telemetry.LeaderHasFinished)
+            {
+                var result = car.ResultPosition;
+                if (result != null && result.Position > 0)
+                    return (int)result.Position;
+            }
 
             if (data.Telemetry.RaceDistance > 1.10)
                 return car.Position;

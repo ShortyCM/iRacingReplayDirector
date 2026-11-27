@@ -41,55 +41,49 @@ namespace iRacingReplayDirector.Phases.Capturing.LeaderBoard
 
         public void Process(DataSample data, TimeSpan relativeTime, ref OverlayData.LeaderBoard leaderBoard)
         {
-            var session = data.SessionData.SessionInfo.Sessions[data.Telemetry.SessionNum];
-
             leaderBoard = captureLeaderBoard.CreateLeaderBoard(data, relativeTime, leaderBoard.Drivers);
 
-            for (int i = 1; i < data.SessionData.DriverInfo.CompetingDrivers.Length; i++)
+            foreach (var car in data.Telemetry.RaceCars)
             {
-                AnnounceIfDriverHasFinished(data, relativeTime, session, i, ref leaderBoard);
-                MarkResultFlashCardStart(data, relativeTime, session, i);
+                if (!car.HasSeenCheckeredFlag || haveNotedCheckerdFlag[car.CarIdx])
+                    continue;
+
+                var result = car.ResultPosition;
+                if (result == null || result.Position <= 0)
+                    continue;
+
+                var position = (int)result.Position;
+                AnnounceFinish(data, relativeTime, car, position, ref leaderBoard);
+                MarkResultFlashCardStart(data, relativeTime, position);
             }
 
             overlayData.LeaderBoards.Add(leaderBoard);
         }
 
-        void MarkResultFlashCardStart(DataSample data, TimeSpan relativeTime, SessionData._SessionInfo._Sessions session, int i)
+        void MarkResultFlashCardStart(DataSample data, TimeSpan relativeTime, int position)
         {
-            if (!data.LastSample.Telemetry.Cars[i].HasSeenCheckeredFlag || overlayData.TimeForOutroOverlay != null)
-                return;
-
-            var position = (int)session.ResultsPositions.First(r => r.CarIdx == i).Position;
-
-            if (position == Settings.Default.ResultsFlashCardPosition)
+            if (!overlayData.TimeForOutroOverlay.HasValue && position == Settings.Default.ResultsFlashCardPosition)
             {
                 overlayData.TimeForOutroOverlay = relativeTime.TotalSeconds;
                 TraceInfo.WriteLine("{0} Mark show results flash card.", data.Telemetry.SessionTimeSpan);
             }
         }
 
-        void AnnounceIfDriverHasFinished(DataSample data, TimeSpan relativeTime, SessionData._SessionInfo._Sessions session, int i, ref OverlayData.LeaderBoard leaderBoard)
+        void AnnounceFinish(DataSample data, TimeSpan relativeTime, Car car, int position, ref OverlayData.LeaderBoard leaderBoard)
         {
-            if (!data.LastSample.Telemetry.Cars[i].HasSeenCheckeredFlag || haveNotedCheckerdFlag[i])
-                return;
+            haveNotedCheckerdFlag[car.CarIdx] = true;
 
-            haveNotedCheckerdFlag[i] = true;
-
-            var driver = data.SessionData.DriverInfo.CompetingDrivers[i];
-            var position = (int)session.ResultsPositions.First(r => r.CarIdx == i).Position;
-            var pitStopCount = data.Telemetry.Cars[i].PitStopCount;
-
-            var drivers = leaderBoard.Drivers.Where(d => d.CarIdx != i)
+            var drivers = leaderBoard.Drivers.Where(d => d.CarIdx != car.CarIdx)
                 .Select(d => d.Clone())
                 .ToList();
 
-            drivers.Insert((int)position - 1, new OverlayData.Driver
+            drivers.Insert(Math.Min(position - 1, drivers.Count), new OverlayData.Driver
             {
-                CarNumber = driver.CarNumber,
-                UserName = driver.UserName,
+                CarNumber = car.Details.CarNumberDisplay,
+                UserName = car.Details.UserName,
                 Position = position,
-                CarIdx = i,
-                PitStopCount = pitStopCount
+                CarIdx = car.CarIdx,
+                PitStopCount = car.PitStopCount
 
             });
 
@@ -99,7 +93,7 @@ namespace iRacingReplayDirector.Phases.Capturing.LeaderBoard
 
             leaderBoard = captureLeaderBoard.CreateLeaderBoard(data, relativeTime, drivers.ToArray());
 
-            var msg = string.Format("{0} finished in {1}{2}", driver.UserName, position, position.Ordinal());
+            var msg = string.Format("{0} finished in {1}{2}", car.Details.UserName, position, position.Ordinal());
             TraceInfo.WriteLine("{0} {1}", data.Telemetry.SessionTimeSpan, msg);
             commentaryMessages.Add(msg, relativeTime.TotalSeconds);
         }
