@@ -103,7 +103,15 @@ namespace iRacingReplayDirector
 
         private sealed class EncoderEditor : GroupBox
         {
+            private static readonly string[] X264AndX265Presets =
+            {
+                "ultrafast", "superfast", "veryfast", "faster", "fast",
+                "medium", "slow", "slower", "veryslow", "placebo"
+            };
+
             private readonly ComboBox encoder = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+            private readonly ComboBox preset = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+            private readonly Label presetLabel = new Label { Text = "Preset" };
             private readonly ComboBox mode = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             private readonly ComboBox pixelFormat = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             private readonly NumericUpDown value = new NumericUpDown { Dock = DockStyle.Fill };
@@ -129,6 +137,8 @@ namespace iRacingReplayDirector
                 Controls.Add(fields);
 
                 AddRow(fields, new Label { Text = "Encoder" }, encoder);
+                if (isVideo)
+                    AddRow(fields, presetLabel, preset);
                 AddRow(fields, new Label { Text = "Rate control" }, mode);
                 AddRow(fields, valueLabel, value);
                 if (isVideo)
@@ -174,7 +184,18 @@ namespace iRacingReplayDirector
                     if (isVideo && pixelFormat.Items.Contains(currentPixelFormat))
                         pixelFormat.SelectedItem = currentPixelFormat;
                     if (current.Options != null)
-                        options.Lines = current.Options.Select(pair => pair.Key + "=" + pair.Value).ToArray();
+                    {
+                        string savedPreset;
+                        if (preset.Items.Count != 0 && current.Options.TryGetValue("preset", out savedPreset) && !string.IsNullOrWhiteSpace(savedPreset))
+                        {
+                            if (!preset.Items.Contains(savedPreset))
+                                preset.Items.Add(savedPreset);
+                            preset.SelectedItem = savedPreset;
+                        }
+
+                        options.Lines = current.Options.Where(pair => preset.Items.Count == 0 || pair.Key != "preset")
+                            .Select(pair => pair.Key + "=" + pair.Value).ToArray();
+                    }
                     sampleRate.Value = Math.Max(0, Math.Min(sampleRate.Maximum, current.SampleRate));
                     channels.Value = Math.Max(0, Math.Min(channels.Maximum, current.Channels));
                 }
@@ -205,6 +226,8 @@ namespace iRacingReplayDirector
             private void RefreshEncoder()
             {
                 var selected = encoder.SelectedItem as Ffmpeg.Encoder;
+                preset.Items.Clear();
+                presetLabel.Visible = preset.Visible = false;
                 capabilities = selected == null || selected.Name.Length == 0 ? null : Ffmpeg.Describe(selected.Name);
                 sampleRate.Enabled = capabilities != null;
                 channels.Enabled = capabilities != null;
@@ -220,7 +243,16 @@ namespace iRacingReplayDirector
                 if (capabilities == null)
                     return;
 
-                option.Items.AddRange(capabilities.Options.Keys.OrderBy(name => name).Cast<object>().ToArray());
+                if (capabilities.Options.ContainsKey("preset") &&
+                    (selected.Name == "libx265" || selected.Name == "libx264" || selected.Name == "libx264rgb"))
+                {
+                    preset.Items.Add("Encoder default");
+                    preset.Items.AddRange(X264AndX265Presets);
+                    preset.SelectedIndex = 0;
+                    presetLabel.Visible = preset.Visible = true;
+                }
+                option.Items.AddRange(capabilities.Options.Keys.Where(name => preset.Items.Count == 0 || name != "preset")
+                    .OrderBy(name => name).Cast<object>().ToArray());
                 pixelFormat.Items.AddRange(capabilities.PixelFormats);
                 mode.Items.Add("Encoder default");
                 if (!Regex.IsMatch(selected.Name, @"^(pcm_|adpcm_|ffv1|alac$|flac$|huffyuv$|rawvideo$|utvideo$)"))
@@ -307,10 +339,14 @@ namespace iRacingReplayDirector
                     Encoder = selected.Name, Mode = (string)mode.SelectedItem, Value = value.Value,
                     SampleRate = (int)sampleRate.Value, Channels = (int)channels.Value
                 };
+                if (preset.SelectedIndex > 0)
+                    settings.Options.Add("preset", (string)preset.SelectedItem);
                 foreach (var line in options.Lines.Where(line => !string.IsNullOrWhiteSpace(line)))
                 {
                     var separator = line.IndexOf('=');
                     var key = separator < 0 ? "" : line.Substring(0, separator).Trim();
+                    if (key == "preset" && preset.Items.Count != 0)
+                        throw new ArgumentException("Set the encoder preset using the Preset drop-down.");
                     if (!capabilities.Options.ContainsKey(key) || string.IsNullOrWhiteSpace(line.Substring(separator + 1)))
                         throw new ArgumentException("Use a supported " + Text.ToLowerInvariant() + " encoder option as name=value: " + line);
                     if (settings.Options.ContainsKey(key))

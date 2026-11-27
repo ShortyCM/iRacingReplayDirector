@@ -145,7 +145,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             var size = new Size(width, height);
             var audio = string.IsNullOrEmpty(output.Audio.Encoder) ? null
                 : segments.Select(segment => segment.Recording.Media).FirstOrDefault(media => media.HasAudio);
-            var arguments = new List<string> { "-filter_complex_threads", "2" };
+            var arguments = new List<string>();
             var graph = new List<string>();
             var rate = main.RateExpression;
             var frameRate = main.FrameRate;
@@ -220,7 +220,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             var length = Ffmpeg.Seconds(duration);
             var tag = index.ToString(CultureInfo.InvariantCulture);
             arguments.AddRange(new[] { "-ss", Ffmpeg.Seconds(segment.Start), "-t", Ffmpeg.Seconds(duration + 1 / frameRate),
-                "-threads", "2", "-i", segment.Recording.File.FileName });
+                "-i", segment.Recording.File.FileName });
 
             var video = "[" + tag + ":v:0]fps=" + rate + ":start_time=0"
                 + ",scale=" + size.Width + ":" + size.Height + ":force_original_aspect_ratio=decrease"
