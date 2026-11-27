@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ReplayDirectorOutputFile>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\$(ReplayDirectorOutputSubdirectory)$(TargetFileName)</ReplayDirectorOutputFile>
+  </PropertyGroup>
+  <Target Name="CopyToReplayDirectorOutput" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(ReplayDirectorOutputFile)"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="CleanReplayDirectorOutput" AfterTargets="CoreClean">
+    <Delete Files="$(ReplayDirectorOutputFile)" />
+  </Target>
+</Project>
