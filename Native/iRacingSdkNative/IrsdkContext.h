@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <ctime>
 
-#include "vendor/irsdk_defines.h"
+#include <irsdk_defines.h>
 
 struct IrsdkContext
 {

@@ -34,14 +34,16 @@ Building
 
 Open iRacingReplayDirectorApps.sln in Visual Studio 2026 with the .NET desktop
 development and Desktop development with C++ workloads, the .NET Framework
-4.7.2 targeting pack, and a Windows SDK. The solution builds the official
-iRacing C++ SDK bridge and copies its x64 DLL beside the app.
+4.7.2 targeting pack, a Windows SDK, and Git on PATH. The solution builds the
+official iRacing C++ SDK bridge and copies its x64 DLL beside the app.
 
-The native sources are from iRacing's SDK 1.20 archive. The bridge gives each
-data feed its own instance of the SDK's connection state. The C# compatibility
-source comes from [iRacingSDK.Net at 42028a5](https://github.com/MerlinCooper/iRacingSDK.Net/tree/42028a5)
-and provides the data models and interfaces used by Replay Director and its
-plugins.
+The build uses iRacing SDK 1.20 from %USERPROFILE%\source\repos\irsdk_1_20 by
+default. Set IRacingSdkRoot as an environment variable or MSBuild property to
+use another location. The build applies the bridge's connection changes to a
+copy of irsdk_utils.cpp in the intermediate output directory.
+
+The C# compatibility source comes from [iRacingSDK.Net at 42028a5](https://github.com/MerlinCooper/iRacingSDK.Net/tree/42028a5)
+and provides the data models and interfaces used by Replay Director and its plugins.
 
 Known Issues
 ============

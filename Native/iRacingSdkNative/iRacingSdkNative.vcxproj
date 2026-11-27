@@ -26,9 +26,14 @@
     <OutDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\</OutDir>
     <IntDir>$(MSBuildProjectDirectory)\obj\$(Configuration)\</IntDir>
     <TargetName>ReplayDirector.iRacingNative</TargetName>
+    <IRacingSdkRoot Condition="'$(IRacingSdkRoot)' == ''">$(USERPROFILE)\source\repos\irsdk_1_20</IRacingSdkRoot>
+    <LocalSdkBuildDir>$(IntDir)LocalSdk\</LocalSdkBuildDir>
+    <LocalSdkSource>$(LocalSdkBuildDir)irsdk_utils.cpp</LocalSdkSource>
+    <LocalSdkPatch>$(MSBuildProjectDirectory)\irsdk_utils.patch</LocalSdkPatch>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>$(IRacingSdkRoot);$(MSBuildProjectDirectory);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <RuntimeLibrary Condition="'$(Configuration)' == 'Debug'">MultiThreadedDebug</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)' != 'Debug'">MultiThreaded</RuntimeLibrary>
@@ -36,9 +41,30 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="IrsdkContext.h" />
-    <ClInclude Include="vendor\irsdk_defines.h" />
+    <ClInclude Include="$(IRacingSdkRoot)\irsdk_defines.h" />
     <ClCompile Include="Bridge.cpp" />
-    <ClCompile Include="vendor\irsdk_utils.cpp" />
+    <ClCompile Include="$(LocalSdkSource)" />
+    <None Include="$(IRacingSdkRoot)\irsdk_utils.cpp" />
+    <None Include="irsdk_utils.patch" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <Target Name="CheckLocalIrsdk">
+    <Error Condition="!Exists('$(IRacingSdkRoot)\irsdk_defines.h') Or !Exists('$(IRacingSdkRoot)\irsdk_utils.cpp')"
+           Text="iRacing SDK 1.20 sources were not found in '$(IRacingSdkRoot)'. Set IRacingSdkRoot to the extracted SDK directory." />
+    <MakeDir Directories="$(LocalSdkBuildDir)" />
+    <WriteLinesToFile File="$(LocalSdkBuildDir)source-root.txt" Lines="$(IRacingSdkRoot)"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+  <!-- Apply the connection-context changes to a build-directory copy of the official source. -->
+  <Target Name="PrepareLocalIrsdk" BeforeTargets="ClCompile" DependsOnTargets="CheckLocalIrsdk"
+          Inputs="$(IRacingSdkRoot)\irsdk_utils.cpp;$(LocalSdkPatch);$(LocalSdkBuildDir)source-root.txt"
+          Outputs="$(LocalSdkSource);$(LocalSdkBuildDir)prepared.stamp">
+    <Delete Files="$(LocalSdkBuildDir)prepared.stamp" />
+    <Copy SourceFiles="$(IRacingSdkRoot)\irsdk_utils.cpp" DestinationFiles="$(LocalSdkSource)" />
+    <Exec Command="git.exe apply --no-index --ignore-space-change --whitespace=nowarn &quot;$(LocalSdkPatch)&quot;"
+          WorkingDirectory="$(LocalSdkBuildDir)" EnvironmentVariables="GIT_CEILING_DIRECTORIES=$(MSBuildProjectDirectory)" />
+    <Touch Files="$(LocalSdkBuildDir)prepared.stamp" AlwaysCreate="true" />
+  </Target>
 </Project>
