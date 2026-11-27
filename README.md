@@ -29,6 +29,13 @@ Requirements
 * Only tested with the PCM audio codec
 * Only supports MPEG/H.264 video codec for capture/conversion
 
+Building
+========
+
+Build iRacingReplayDirectorApps.sln in Visual Studio 2026 with the .NET Framework
+4.7.2 targeting pack. The solution builds the SDK from a sibling checkout at
+`../iRacingSDK.Net/iRacingSDK.csproj`.
+
 Known Issues
 ============
 

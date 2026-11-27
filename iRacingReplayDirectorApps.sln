@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoOverlay", "plugins\NoOver
 		{CEC2BB31-324D-41E3-83C8-A5C35C63129B} = {CEC2BB31-324D-41E3-83C8-A5C35C63129B}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iRacingSDK", "..\iRacingSDK.Net\iRacingSDK.csproj", "{5422AE20-F220-4BE1-9E61-5296981ABB5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,14 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|x64.Build.0 = Debug|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|x64.ActiveCfg = Release|Any CPU
+		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|x64.Build.0 = Release|Any CPU
 		{5916B84C-0264-4102-9CCC-28006D84E4FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5916B84C-0264-4102-9CCC-28006D84E4FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5916B84C-0264-4102-9CCC-28006D84E4FA}.Debug|x64.ActiveCfg = Debug|Any CPU
