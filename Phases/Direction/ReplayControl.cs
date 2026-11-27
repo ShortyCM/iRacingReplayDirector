@@ -30,7 +30,6 @@ namespace iRacingReplayDirector.Phases.Direction
         readonly IDirectionRule[] directionRules;
         readonly IVetoRule ruleRandom;
         IDirectionRule currentRule;
-        public static CameraControl cameraControl;
 
         public ReplayControl(SessionData sessionData, Incidents incidents, RemovalEdits removalEdits, TrackCameras trackCameras)
         {
@@ -44,8 +43,7 @@ namespace iRacingReplayDirector.Phases.Direction
 
             var camera = cameras.First(tc => tc.IsRaceStart);
 
-            //var cameraControl = new CameraControl(cameras);
-            cameraControl = new CameraControl(cameras);
+            var cameraControl = new CameraControl(cameras);
             cameraControl.CameraOnPositon(1, camera.CameraNumber);
 
             var battleMarker = removalEdits.For(InterestState.Battle);

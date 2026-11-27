@@ -28,15 +28,8 @@ namespace iRacingReplayDirector.Phases
 {
     public partial class IRacingReplay
     {
-        static private VideoCapture raceVideo = new VideoCapture();
-
         void _CaptureOpeningScenes(Action onComplete)
         {
-            //Only record opening scenes if selected in AdvancedSettingsDialog
-            if (!iRacingReplayDirector.Properties.Settings.Default.bCaptureOpeningScene)
-            {
-                //return;
-            }
             var data = iRacing.GetDataFeed().First();
             var session = data.SessionData.SessionInfo.Sessions.Qualifying();
             if (session == null || session.ResultsPositions == null)
@@ -62,17 +55,13 @@ namespace iRacingReplayDirector.Phases
 
             var scenicCameras = camera.GroupNum;
             var aCar = data.SessionData.DriverInfo.CompetingDrivers[1].CarNumberRaw;
-            //Don't use Methode from iRacing SDK - instead use methode from cameracontrol
-            ReplayControl.cameraControl.CameraOnDriver((short)aCar, (short)scenicCameras);
-            //iRacing.Replay.CameraOnDriver((short)aCar, (short)scenicCameras);
+            iRacing.Replay.CameraOnDriver((short)aCar, (short)scenicCameras);
 
-            //var videoCapture = new VideoCapture();
-
-            raceVideo.Activate(workingFolder);
-
+            var videoCapture = new VideoCapture();
+            videoCapture.Activate(workingFolder);
             Thread.Sleep(shortTestOnly ? 5000 : 20000);
 
-            var fileNames = raceVideo.Deactivate(bRecordUsingPauseResume);
+            var fileNames = videoCapture.Deactivate();
             if (fileNames.Count == 0)
                 return;
 

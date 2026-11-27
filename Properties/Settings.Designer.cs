@@ -26,18 +26,6 @@ namespace iRacingReplayDirector.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool bCaptureOpeningScene {
-            get {
-                return ((bool)(this["bCaptureOpeningScene"]));
-            }
-            set {
-                this["bCaptureOpeningScene"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool bShutdownPCAfterEncoding {
             get {
                 return ((bool)(this["bShutdownPCAfterEncoding"]));
@@ -73,18 +61,6 @@ namespace iRacingReplayDirector.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool bFastVideoRecording {
-            get {
-                return ((bool)(this["bFastVideoRecording"]));
-            }
-            set {
-                this["bFastVideoRecording"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool bShortTestOnly {
             get {
@@ -92,18 +68,6 @@ namespace iRacingReplayDirector.Properties {
             }
             set {
                 this["bShortTestOnly"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool bUseNewSettingsDialog {
-            get {
-                return ((bool)(this["bUseNewSettingsDialog"]));
-            }
-            set {
-                this["bUseNewSettingsDialog"] = value;
             }
         }
         

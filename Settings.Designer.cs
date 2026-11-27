@@ -481,20 +481,6 @@ namespace iRacingReplayDirector
 
         [UserScopedSetting]
         [DebuggerNonUserCode]
-        [DefaultSettingValue("Alt + F10")]
-        public string strHotKeyPauseResume  
-        {
-            get
-            {
-                return (string)this["strHotKeyPauseResume"];
-            }
-            set{
-                this["strHotKeyPauseResume"] = value;
-            }
-        }
-
-        [UserScopedSetting]
-        [DebuggerNonUserCode]
         [DefaultSettingValue("Alt + F9")]
         public string strHotKeyStopStart
         {

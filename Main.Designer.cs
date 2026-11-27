@@ -56,7 +56,6 @@ namespace iRacingReplayDirector
             this.label_SupportedSession = new System.Windows.Forms.Label();
             this.cb_CloseiRacingAfterRecording = new System.Windows.Forms.CheckBox();
             this.cb_ShutdownAfterEncode = new System.Windows.Forms.CheckBox();
-            this.cb_FastVideoRecording = new System.Windows.Forms.CheckBox();
             this.cb_EncodeVideoAfterCapture = new System.Windows.Forms.CheckBox();
             this.verifyVideoCaptureButton = new System.Windows.Forms.Button();
             this.configureTrackCamerasLabel = new System.Windows.Forms.Label();
@@ -86,7 +85,6 @@ namespace iRacingReplayDirector
             this.changeVersionButton = new System.Windows.Forms.Button();
             this.configurePluginsButton = new System.Windows.Forms.Button();
             this.newVersionMessage = new System.Windows.Forms.Label();
-            this.cb_UseNewSettingsDlg = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabCapture.SuspendLayout();
             this.tabTranscoding.SuspendLayout();
@@ -139,7 +137,6 @@ namespace iRacingReplayDirector
             this.tabCapture.Controls.Add(this.label_SupportedSession);
             this.tabCapture.Controls.Add(this.cb_CloseiRacingAfterRecording);
             this.tabCapture.Controls.Add(this.cb_ShutdownAfterEncode);
-            this.tabCapture.Controls.Add(this.cb_FastVideoRecording);
             this.tabCapture.Controls.Add(this.cb_EncodeVideoAfterCapture);
             this.tabCapture.Controls.Add(this.verifyVideoCaptureButton);
             this.tabCapture.Controls.Add(this.configureTrackCamerasLabel);
@@ -197,20 +194,6 @@ namespace iRacingReplayDirector
             this.cb_ShutdownAfterEncode.UseVisualStyleBackColor = true;
             this.cb_ShutdownAfterEncode.CheckedChanged += new System.EventHandler(this.cb_ShutdownPCAfterEncoding_Changed);
             // 
-            // cb_FastVideoRecording
-            // 
-            this.cb_FastVideoRecording.AutoSize = true;
-            this.cb_FastVideoRecording.Checked = global::iRacingReplayDirector.Properties.Settings.Default.bFastVideoRecording;
-            this.cb_FastVideoRecording.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_FastVideoRecording.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::iRacingReplayDirector.Properties.Settings.Default, "bFastVideoRecording", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-            this.cb_FastVideoRecording.Location = new System.Drawing.Point(300, 58);
-            this.cb_FastVideoRecording.Name = "cb_FastVideoRecording";
-            this.cb_FastVideoRecording.Size = new System.Drawing.Size(217, 23);
-            this.cb_FastVideoRecording.TabIndex = 8;
-            this.cb_FastVideoRecording.Text = "Fast-Video-Recording (alpha)";
-            this.cb_FastVideoRecording.UseVisualStyleBackColor = true;
-            this.cb_FastVideoRecording.CheckedChanged += new System.EventHandler(this.cb_FastVideoRecording_CheckedChanged);
-            // 
             // cb_EncodeVideoAfterCapture
             // 
             this.cb_EncodeVideoAfterCapture.AutoSize = true;
@@ -222,7 +205,6 @@ namespace iRacingReplayDirector
             this.cb_EncodeVideoAfterCapture.TabIndex = 8;
             this.cb_EncodeVideoAfterCapture.Text = "Encode Video After Capture";
             this.cb_EncodeVideoAfterCapture.UseVisualStyleBackColor = true;
-            this.cb_EncodeVideoAfterCapture.CheckedChanged += new System.EventHandler(this.EncodeVideoAfterCapture_CheckedChanged);
             // 
             // verifyVideoCaptureButton
             // 
@@ -526,25 +508,11 @@ namespace iRacingReplayDirector
             this.newVersionMessage.Text = "New Version available ->";
             this.newVersionMessage.Visible = false;
             // 
-            // cb_UseNewSettingsDlg
-            // 
-            this.cb_UseNewSettingsDlg.AutoSize = true;
-            this.cb_UseNewSettingsDlg.Checked = global::iRacingReplayDirector.Properties.Settings.Default.bUseNewSettingsDialog;
-            this.cb_UseNewSettingsDlg.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::iRacingReplayDirector.Properties.Settings.Default, "bUseNewSettingsDialog", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-            this.cb_UseNewSettingsDlg.Location = new System.Drawing.Point(17, 46);
-            this.cb_UseNewSettingsDlg.Name = "cb_UseNewSettingsDlg";
-            this.cb_UseNewSettingsDlg.Size = new System.Drawing.Size(238, 23);
-            this.cb_UseNewSettingsDlg.TabIndex = 40;
-            this.cb_UseNewSettingsDlg.Text = "Use New Settings Dialog (alpha)";
-            this.cb_UseNewSettingsDlg.UseVisualStyleBackColor = true;
-            this.cb_UseNewSettingsDlg.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged_1);
-            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(779, 424);
-            this.Controls.Add(this.cb_UseNewSettingsDlg);
             this.Controls.Add(this.newVersionMessage);
             this.Controls.Add(this.configurePluginsButton);
             this.Controls.Add(this.changeVersionButton);
@@ -611,9 +579,7 @@ namespace iRacingReplayDirector
         private System.Windows.Forms.Button configurePluginsButton;
         private System.Windows.Forms.Label newVersionMessage;
         private System.Windows.Forms.CheckBox cb_ShutdownAfterEncode;
-        private System.Windows.Forms.CheckBox cb_FastVideoRecording;
         private System.Windows.Forms.CheckBox cb_CloseiRacingAfterRecording;
-        private System.Windows.Forms.CheckBox cb_UseNewSettingsDlg;
         private System.Windows.Forms.Label label_SupportedSession;
     }
 }

@@ -1,6 +1,6 @@
-| Release Weekly | CI/CD-Master | CI/CD Fast-Recording |
-| -------------------- | -------------------- | -------------------- |
-| ![Build status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Release_Weekly) | ![Build Status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Master?branchName=master) | ![Build Status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_OBS%20Fast%20Record%20Branch%20(alpha)?branchName=Fast_Video_Recording_With_OBS) |
+| Release Weekly | CI/CD-Master |
+| -------------------- | -------------------- |
+| ![Build status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Release_Weekly) | ![Build Status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Master?branchName=master) |
 
 iRacingReplayDirector
 =====================
@@ -83,7 +83,7 @@ Creating a Video Thereafter
 7. Select the % options for the cameras you would like to use during the replay. Once you have done this for a track, you won’t have to repeat this in the future.
 8. If you want the video encoding to happen automatically when the capture is complete, check the “Encode Video After Capture” box.
 9. Press the Begin Capture button when ready to capture.
-10. The process will run for at least the entire length of the original replay so be patient.
+10. Replay Director locates the race start, scans incident markers, and records the race at normal playback speed.
 11. Once the race capture is completed, you can then Encode your full race and highlight videos.
 12. When encoding, if the highlight Video Only isn’t checked, it creates 2 videos from your replays; the full replay and a highlight video with a length defined in the Config options. If the Highlight Video Only box is checked under Video Encoding, it will only create the highlight video.
 13. The completed videos use the container selected in **Output settings**.
@@ -94,6 +94,4 @@ iRacingReplayDirector is the sucessor of the discontinued iRacingReplayOverlay.N
 
 As Vipoo no longer owns an active license for iRacing - nor has the time to commit to this project - I will take over managing the original repository (vipoo/iRacingReplayDirector.net) and continue to coordinate future enhancements as well.  
 
-For the ease of processing most of the development activites will be managed in the fork MerlinCooper/iRacingReplayDirector. 
-
-Based on Azure DevOps continous integration is setup for two branches "master" and "Fast_Video_Recording_With_OBS". Whereas the master branch is being used for changes/modifications within the current program structure and the "Fast_Recording_With_OBS" branch is taking a different approach to significantly reduce the time to create a highlight video from long replays. 
+For the ease of processing most of the development activites will be managed in the fork MerlinCooper/iRacingReplayDirector.

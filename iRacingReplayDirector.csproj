@@ -124,12 +124,6 @@
     <Compile Include="AboutBox1.Designer.cs">
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </Compile>
-    <Compile Include="AdvancedGeneralSettingsDlg.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AdvancedGeneralSettingsDlg.Designer.cs">
-      <DependentUpon>AdvancedGeneralSettingsDlg.cs</DependentUpon>
-    </Compile>
     <Compile Include="Phases\Capturing\LogCamDriver.cs" />
     <Compile Include="Phases\TranscodeAndOverlay.cs" />
     <Compile Include="PluginSettings.cs">
@@ -276,9 +270,6 @@
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="AdvancedGeneralSettingsDlg.resx">
-      <DependentUpon>AdvancedGeneralSettingsDlg.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ConfigureGeneralSettings.resx">
       <DependentUpon>ConfigureGeneralSettings.cs</DependentUpon>

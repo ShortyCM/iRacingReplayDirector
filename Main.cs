@@ -192,10 +192,8 @@ namespace iRacingReplayDirector
             cb_ShutdownAfterEncode.Checked = Properties.Settings.Default.bShutdownPCAfterEncoding;
             cb_CloseiRacingAfterRecording.Checked = Properties.Settings.Default.bCloseiRacingAfterRecording;
             cb_EncodeVideoAfterCapture.Checked = Properties.Settings.Default.bEncodeVideoAfterCapture;
-            cb_FastVideoRecording.Checked = Properties.Settings.Default.bFastVideoRecording;
             cb_ShortTestOnly.Checked = Properties.Settings.Default.bShortTestOnly;
             cb_HighLightVideoOnly.Checked = Properties.Settings.Default.bHighLightVideoOnly;
-            cb_UseNewSettingsDlg.Checked = Properties.Settings.Default.bUseNewSettingsDialog;
 
 
 
@@ -254,11 +252,9 @@ namespace iRacingReplayDirector
             Properties.Settings.Default.bShutdownPCAfterEncoding = cb_ShutdownAfterEncode.Checked;
             Properties.Settings.Default.bCloseiRacingAfterRecording = cb_CloseiRacingAfterRecording.Checked;
             Properties.Settings.Default.bEncodeVideoAfterCapture = cb_EncodeVideoAfterCapture.Checked;
-            Properties.Settings.Default.bFastVideoRecording = cb_FastVideoRecording.Checked;
             Properties.Settings.Default.bShortTestOnly = cb_ShortTestOnly.Checked;
             Properties.Settings.Default.bHighLightVideoOnly = cb_HighLightVideoOnly.Checked;
             //enable change of standard setting to use NewSettingsDialog only after intensive testings that all values can be reliably set using the advanced settings dialog
-            //Properties.Settings.Default.bUseNewSettingsDialog = cb_UseNewSettingsDlg.Checked;
             Properties.Settings.Default.Save();
         }
 
@@ -522,7 +518,7 @@ namespace iRacingReplayDirector
 
             NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED | NativeMethods.ES_DISPLAY_REQUIRED);
 
-            iRacingProcess = new IRacingReplay(shortTestOnly: cb_ShortTestOnly.Checked, bRecordUsingPauseResume: cb_FastVideoRecording.Checked, bCloseiRacingAfterRecording: cb_CloseiRacingAfterRecording.Checked)
+            iRacingProcess = new IRacingReplay(shortTestOnly: cb_ShortTestOnly.Checked, bCloseiRacingAfterRecording: cb_CloseiRacingAfterRecording.Checked)
                 .WithWorkingFolder(workingFolderTextBox.Text)
                 .AnalyseRace(() => { AnalysingRaceLabel.Visible = false; CapturingRaceLabel.Visible = true; })
                 .CaptureOpeningScenes()
@@ -572,9 +568,8 @@ namespace iRacingReplayDirector
 
         void configureVideoCaptureButton_Click(object sender, EventArgs e)
         {
-            var settings = cb_UseNewSettingsDlg.Checked ? (Form)new AdvancedGeneralSettingsDlg(Settings.Default) : (Form)new ConfigureGeneralSettings(Settings.Default);
-            //var settings = new ConfigureGeneralSettings(Settings.Default);
-            settings.ShowDialog();
+            using (var settings = new ConfigureGeneralSettings(Settings.Default))
+                settings.ShowDialog(this);
         }
 
         void logMessagesButton_Click(object sender, EventArgs e)
@@ -624,21 +619,6 @@ namespace iRacingReplayDirector
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void cb_FastVideoRecording_CheckedChanged(object sender, EventArgs e)
-        {
-            cb_EncodeVideoAfterCapture.Checked = !cb_FastVideoRecording.Checked;
-        }
-
-        private void EncodeVideoAfterCapture_CheckedChanged(object sender, EventArgs e)
-        {
-            cb_FastVideoRecording.Checked = !cb_EncodeVideoAfterCapture.Checked;
-        }
-
-        private void checkBox1_CheckedChanged_1(object sender, EventArgs e)
         {
 
         }

@@ -86,30 +86,18 @@ namespace iRacingReplayDirector.Phases.Direction
 
         void SwitchToLeader(DataSample data)
         {
-            if (reselectLeaderAt < DateTime.Now)
-            {
-                int posLeaderOnTrack = 1;
-                var leader = data.Telemetry.Cars.First(c => c.Position == posLeaderOnTrack);
+            if (reselectLeaderAt >= DateTime.Now)
+                return;
 
-                //InterestState curState = editMarker.getInterestState();
-                if (editMarker.getInterestState() == InterestState.FirstLap)
-                {
+            var raceCars = data.Telemetry.RaceCars;
+            var leader = raceCars.FirstOrDefault(car => car.Position == 1 && car.HasData);
+            if (leader != null && leader.IsInPits)
+                leader = raceCars.Where(car => car.HasData && !car.IsInPits).OrderBy(car => car.Position).FirstOrDefault();
+            if (leader == null)
+                return;
 
-                    ////if in first lap make sure that first car on track is selected as leader
-                    while (leader.IsInPits)
-                    {
-                        posLeaderOnTrack += 1;
-                        leader = data.Telemetry.Cars[posLeaderOnTrack];
-                        //leader = data.Telemetry.Cars.First(c => c.Position == posLeaderOnTrack);
-                    }
-                    ;
-                }
-
-
-                cameraControl.CameraOnDriver(leader.Details.CarNumberRaw, cameraControl.RaceStartCameraNumber);
-
-                reselectLeaderAt = DateTime.Now + 1.5.Seconds();
-            }
+            cameraControl.CameraOnDriver(leader.Details.CarNumberRaw, cameraControl.RaceStartCameraNumber);
+            reselectLeaderAt = DateTime.Now + 1.5.Seconds();
         }
 
         void OnlyOnce(ref bool latch, Action action)
