@@ -90,7 +90,8 @@ namespace iRacingReplayDirector.Phases
             TraceDebug.WriteLine(data.Telemetry.ToString());
 
             AnalyseIncidents();                                                         //Analyse incidents
-            AnalyseRaceSituations(new iRacingConnection().GetBufferedDataFeed());       //Analyse race situation (all) by playing out replay at 16x speed. 
+            using (var connection = new iRacingConnection())
+                AnalyseRaceSituations(connection.GetBufferedDataFeed());
 
             onComplete();
         }

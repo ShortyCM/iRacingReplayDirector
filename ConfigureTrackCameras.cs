@@ -133,7 +133,8 @@ namespace iRacingReplayDirector
 
         void TrackCameraPerferences_Load(object sender, EventArgs e)
         {
-            lastSample = new iRacingConnection().GetDataFeed().First();
+            using (var connection = new iRacingConnection())
+                lastSample = connection.GetDataFeed().First();
 
             cameraAngleSelection.Items.Add("Front Facing"); // CameraAngle.LookingInfrontOfCar);
             cameraAngleSelection.Items.Add("Rear Facing"); // CameraAngle.LookingBehindCar);
