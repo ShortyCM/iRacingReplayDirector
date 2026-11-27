@@ -28,7 +28,6 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,15 +38,6 @@ namespace iRacingReplayDirector
 {
     public partial class Main : Form
     {
-        internal static class NativeMethods
-        {
-            [DllImport("kernel32.dll")]
-            public static extern uint SetThreadExecutionState(uint esFlags);
-            public const uint ES_CONTINUOUS = 0x80000000;
-            public const uint ES_SYSTEM_REQUIRED = 0x00000001;
-            public const uint ES_DISPLAY_REQUIRED = 0x00000002;
-        }
-
         System.Windows.Forms.Timer fileWatchTimer;
 
         IRacingReplay iRacingProcess;
@@ -376,8 +366,6 @@ namespace iRacingReplayDirector
             LogListener.ToFile(Path.ChangeExtension(sourceVideoTextBox.Text, "log"));
             //AwsLogListener.SetPhaseTranscode();
 
-            NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED);
-
             iRacingProcess = new IRacingReplay()
                 .WithEncodingOf(OutputOptions.Load())
                 .WithOverlayFile(overlayFile: sourceVideoTextBox.Text)
@@ -388,7 +376,6 @@ namespace iRacingReplayDirector
                     SetTanscodeMessage(trancodingErrorMessage: errorMessage);
                     LogListener.ToFile(GetDefaultLogFileName());
                     //AwsLogListener.SetPhaseGeneral();
-                    NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS);
                 });
         }
 
@@ -519,8 +506,6 @@ namespace iRacingReplayDirector
             LogListener.ToFile(workingFolderTextBox.Text + "\\capture.log");
             //AwsLogListener.SetPhaseCapture();
 
-            NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED | NativeMethods.ES_DISPLAY_REQUIRED);
-
             iRacingProcess = new IRacingReplay(shortTestOnly: cb_ShortTestOnly.Checked, bCloseiRacingAfterRecording: cb_CloseiRacingAfterRecording.Checked)
                 .WithWorkingFolder(workingFolderTextBox.Text)
                 .AnalyseRace(() => { AnalysingRaceLabel.Visible = false; CapturingRaceLabel.Visible = true; })
@@ -557,8 +542,6 @@ namespace iRacingReplayDirector
                         Thread.Sleep(1000);
                         TranscodeVideo_Click(null, null);
                     }
-                    else
-                        NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS);
                 });
         }
 
