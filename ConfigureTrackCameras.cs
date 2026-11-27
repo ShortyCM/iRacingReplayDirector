@@ -29,6 +29,23 @@ namespace iRacingReplayDirector
 {
     public partial class ConfigureTrackCameras : Form
     {
+        private static readonly Dictionary<string, int> defaultCameraRatios = new Dictionary<string, int>
+        {
+            { "Nose", 3 },
+            { "Gearbox", 3 },
+            { "Roll Bar", 3 },
+            { "LF Susp", 6 },
+            { "LR Susp", 6 },
+            { "Gyro", 9 },
+            { "RF Susp", 6 },
+            { "RR Susp", 6 },
+            { "TV1", 16 },
+            { "TV2", 16 },
+            { "TV3", 16 },
+            { "Blimp", 4 },
+            { "Chopper", 6 }
+        };
+
         DataSample lastSample;
 
         string TrackName
@@ -166,18 +183,24 @@ namespace iRacingReplayDirector
             if (!lastSample.IsConnected)
                 return;
 
-            var allCamerasForTrack = trackCameras.Where(tc => tc.TrackName == lastSample.SessionData.WeekendInfo.TrackDisplayName).ToList();
-            trackCameras.RemoveAll(tc => tc.TrackName == lastSample.SessionData.WeekendInfo.TrackDisplayName);
+            var trackName = lastSample.SessionData.WeekendInfo.TrackDisplayName;
+            var allCamerasForTrack = trackCameras.Where(tc => tc.TrackName == trackName).ToList();
+            var useDefaultRatios = allCamerasForTrack.Count == 0;
+            trackCameras.RemoveAll(tc => tc.TrackName == trackName);
 
             foreach (var camera in lastSample.SessionData.CameraInfo.Groups)
             {
-                var trackCamera = allCamerasForTrack.FirstOrDefault(tc => tc.TrackName == lastSample.SessionData.WeekendInfo.TrackDisplayName && tc.CameraName == camera.GroupName);
+                var trackCamera = allCamerasForTrack.FirstOrDefault(tc => tc.CameraName == camera.GroupName);
                 if (trackCamera == null)
                 {
                     trackCamera = new TrackCamera();
 
-                    trackCamera.TrackName = lastSample.SessionData.WeekendInfo.TrackDisplayName;
+                    trackCamera.TrackName = trackName;
                     trackCamera.CameraName = camera.GroupName;
+
+                    int ratio;
+                    if (useDefaultRatios && defaultCameraRatios.TryGetValue(camera.GroupName, out ratio))
+                        trackCamera.Ratio = ratio;
 
                     var similiarCamera = trackCameras.FirstOrDefault(tc => tc.CameraName == trackCamera.CameraName);
                     if (similiarCamera != null)
@@ -208,9 +231,9 @@ namespace iRacingReplayDirector
                 lastLapCamera.Items.Add(tc.CameraName);
             }
 
-            SetCameraDropDown(cameras, trackCameras.RaceStart, "TV2", raceStartCamera);
-            SetCameraDropDown(cameras, trackCameras.Incident, "TV3", incidentCamera);
-            SetCameraDropDown(cameras, trackCameras.LastLap, "TV2", lastLapCamera);
+            SetCameraDropDown(cameras, trackCameras.RaceStart, "TV1", raceStartCamera);
+            SetCameraDropDown(cameras, trackCameras.Incident, "TV2", incidentCamera);
+            SetCameraDropDown(cameras, trackCameras.LastLap, "TV3", lastLapCamera);
         }
 
         void SetCameraDropDown(IEnumerable<TrackCamera> cameras, TrackCameras._CameraSelection specialCamera, string defaultName, ComboBox dropDown)
