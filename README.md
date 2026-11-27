@@ -1,17 +1,9 @@
-| Release Weekly | CI/CD-Master |
-| -------------------- | -------------------- |
-| ![Build status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Release_Weekly) | ![Build Status](https://dev.azure.com/MerlinCooper/iRacingReplayDirector/_apis/build/status/iRacingReplayDirector_Master?branchName=master) |
-
 iRacingReplayDirector
 =====================
 
 This program converts your iRacing replays into video files complete with leaderboards, fastest laps, and more. You can upload these to YouTube and/or use them however you choose.
 
-The program then does the following:
-* Analyses your replay session - looking for all the spins and crashes etc. - so it makes sure it can capture those.
-* Captures some scenic views of the track - to use as a backdrop for the introduction sequence which will include qualifying positions.
-* Captures the entire race.
-* Encodes the results which will add the leaderboard information and create the video file(s). 
+Replay Director scans the replay's incident markers, captures a track introduction when the replay includes a usable qualifying segment, and records the race. It then uses FFmpeg to encode the video with race overlays.
 
 Here is an example of a full length video created by Replay Director:
 https://youtu.be/L8Kd0OqsEVg
@@ -21,77 +13,55 @@ https://youtu.be/a1WaRx0R9KI
 
 Requirements
 ============
-* Video capture software (ie. OBS, Nvidia, etc.).
-* The program will use Alt-F9 for recording. Make sure your video capture software is also set to use that keystroke.
+* Video capture software such as OBS or NVIDIA App.
+* Use the same start/stop recording hotkey in your capture software and in **Configure General Settings**. The default is Alt+F9.
 * Set your video capture software to only record the iRacing replay window.
-* Put a current FFmpeg build's ffmpeg.exe and ffprobe.exe on PATH or beside Replay Director.
+* Put `ffmpeg.exe` and `ffprobe.exe` on `PATH` or beside Replay Director.
 * Save recordings as MP4, MKV, AVI, MOV, WebM, or MPEG-TS.
 * Replays should capture all competitors. Before the session, under the graphics options in iRacing, set the Max Cars box to a number greater than number of competitors.
 
 Output settings
 ===============
 
-In the Video Encoding tab, open **Output settings** to choose the container,
-video encoder, and audio encoder from the installed FFmpeg build. Set a bitrate
-or choose CRF, CQ, QP, or VBR quality when the encoder supports it. You can also set
-encoder-specific options, pixel format, colour matrix and range, and audio
-sample rate and channels. The default is Matroska (.mkv) with x265 at CRF 17
-and AAC at 224 kb/s.
+In the **Video Encoding** tab, open **Output settings** to choose the container
+and select video and audio encoders from the installed FFmpeg build. Set a bitrate
+or choose CRF, CQ, QP, or VBR quality when the encoder supports it. You can also
+set encoder-specific options such as the x264 or x265 preset, adjust pixel format,
+colour matrix and range, and choose the audio sample rate and channel count. The
+default is Matroska (.mkv) with x265 at CRF 17 and AAC at 224 kb/s.
 
 Choose a container that supports both encoders. Hardware encoders also need
-compatible hardware and drivers. Verify Video Conversion exports a short
-preview using the selected settings.
+compatible hardware and drivers.
 
 Building
 ========
 
-Build iRacingReplayDirectorApps.sln in Visual Studio 2026 with the .NET Framework
-4.7.2 targeting pack. The solution builds the SDK from a sibling checkout at
+Build `iRacingReplayDirectorApps.sln` for x64 in Visual Studio 2026 with the .NET Framework
+4.7.2 targeting pack. The solution builds the SDK from a sibling checkout of the
+[iRacingSDK.Net fork](https://github.com/ShortyCM/iRacingSDK.Net) at
 `../iRacingSDK.Net/iRacingSDK.csproj`.
 
-Known Issues
-============
+First-time setup
+================
 
-- Microsoft security features do prevent loading the plugin dll's used for transcoding. [If transcoding doesn start check whether the dlls are blocked.](https://github.com/MerlinCooper/iRacingReplayDirector/issues/91#issuecomment-1417442193). Looking for a permanent corrective action - any advise highly appreciated.  
+1. Start your capture software and open an iRacing replay.
+2. On the **Race Capture** tab, open **Verify Video Capture**. Select the folder where your capture software writes recordings, then click **Verify Video Capture** in the dialog to record a sample.
+3. On the **Video Encoding** tab, open **Verify Video Conversion**. Select the sample recording and click **Verify Conversion**. The test writes a preview of up to 10 seconds beside the sample using the selected output settings.
 
-HOW TO USE
-==========
+Creating a video
+================
 
-1. The first time you use the software, you’ll want to verify it is talking to your Video Capture software correctly. 
-2. Open your Video Capture software
-3. Open an iRacing replay.
-4. Click the Verify Video Capture under the Race Capture tab
-5. Browse to the directory your Video Capture software uses when it captures a video file. You may have to cut/paste the directory name here.
-6. Once the directory is selected, press Verify Video Capture.
-7. The program will run a quick test to verify it can record a video and it is placed in the expected directory.
-8. Once this step is complete and working, you need to Verify the Video Encoding process.
-9. Go to the Video Encoding tab
-10. Press Verify Video.
-11. Browse and select the video that was recorded in step 6.
-12. Click Verify Conversion.
-13. The encoded videos use the container selected in **Output settings**. With Highlight Video Only selected, Replay Director produces one file.
-14. If you’d like, you can now do a test run using the “Short Test Only” checkbox to verify everything is working. This is preferable to doing a 40 minute video and finding out something wasn’t setup correctly. Just follow the instructions below with the “Short Test Only” box checked.
+1. Open the replay in iRacing, hide iRacing's replay overlay with the space bar, and start your capture software.
+2. In Replay Director, use **Configure Track Cameras** to set the camera percentages for a track you haven't configured yet.
+3. Click **Begin Capture**. Replay Director locates the race start, scans incident markers, and records the race at normal playback speed. For a shorter test run, select **Short Test Only** before starting.
+4. **Encode Video After Capture** is checked by default. To encode manually, select the capture's `.replayscript` file on the **Video Encoding** tab and click **Transcode Video**.
+5. Encoding produces full-race and highlight videos by default. Select **Highlight Video Only** to export just the highlights. Set the highlight target length in **Configure General Settings**.
 
-Creating a Video Thereafter
-===========================
-1. Start iRacing with the replay you wish to convert. Make sure iRacing is running at an optimal resolution for video encoding. eg: 720p or 1080p.
-2. Press the space bar to remove iRacing’s overlay from the replay screen.
-3. Start your Video Capture software and verify it is ready to go.
-4. Start iRacing Replay Director
-5. If this is the first time you’ve used the track in the replay, click "Configure Track Cameras".
-6. If iRacing is running, it will have the track selected.
-7. Select the % options for the cameras you would like to use during the replay. Once you have done this for a track, you won’t have to repeat this in the future.
-8. If you want the video encoding to happen automatically when the capture is complete, check the “Encode Video After Capture” box.
-9. Press the Begin Capture button when ready to capture.
-10. Replay Director locates the race start, scans incident markers, and records the race at normal playback speed.
-11. Once the race capture is completed, you can then Encode your full race and highlight videos.
-12. When encoding, if the highlight Video Only isn’t checked, it creates 2 videos from your replays; the full replay and a highlight video with a length defined in the Config options. If the Highlight Video Only box is checked under Video Encoding, it will only create the highlight video.
-13. The completed videos use the container selected in **Output settings**.
+Troubleshooting
+===============
+
+If encoding reports that no highlight cuts could be calculated, reduce **Duration of Highlight video** in **Configure General Settings** and try again.
 
 History
 ==============
-iRacingReplayDirector is the sucessor of the discontinued iRacingReplayOverlay.NET application developed by Vipoo. 
-
-As Vipoo no longer owns an active license for iRacing - nor has the time to commit to this project - I will take over managing the original repository (vipoo/iRacingReplayDirector.net) and continue to coordinate future enhancements as well.  
-
-For the ease of processing most of the development activites will be managed in the fork MerlinCooper/iRacingReplayDirector.
+iRacingReplayDirector is the successor to iRacingReplayOverlay.NET, developed by Vipoo. Merlin Cooper continued development in the `MerlinCooper/iRacingReplayDirector` fork, which this fork builds on.
