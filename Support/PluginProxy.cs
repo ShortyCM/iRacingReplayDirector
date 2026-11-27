@@ -1,6 +1,5 @@
 ﻿using iRacingReplayDirector.Phases.Capturing;
 using iRacingSDK.Support;
-using MediaFoundation.Net;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -51,7 +50,7 @@ namespace iRacingReplayDirector
         {
             get
             {
-                return data.LeaderBoards.Last().StartTime.FromSecondsToNano();
+                return (long)(data.LeaderBoards.Last().StartTime * TimeSpan.TicksPerSecond);
             }
         }
 
@@ -211,7 +210,8 @@ namespace iRacingReplayDirector
 
         void SetLeaderboard()
         {
-            var lb = data.LeaderBoards.LastOrDefault(t => t.StartTime <= timestamp.FromNanoToSeconds());
+            var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
+            var lb = data.LeaderBoards.LastOrDefault(t => t.StartTime <= seconds);
             if (lb == null)
                 lb = data.LeaderBoards.First();
 
@@ -261,7 +261,8 @@ namespace iRacingReplayDirector
 
         public void SetCamDriver()
         {
-            var cd = data.CamDrivers.LastOrDefault(t => t.StartTime <= timestamp.FromNanoToSeconds());
+            var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
+            var cd = data.CamDrivers.LastOrDefault(t => t.StartTime <= seconds);
             if (cd == null)
                 cd = data.CamDrivers.First();
 
@@ -270,7 +271,8 @@ namespace iRacingReplayDirector
 
         void SetMessageSet()
         {
-            var cd = data.MessageStates.LastOrDefault(t => t.Time <= timestamp.FromNanoToSeconds());
+            var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
+            var cd = data.MessageStates.LastOrDefault(t => t.Time <= seconds);
 
             CreateAndAssignInstance("MessageSet", cd == null, instance =>
             {
@@ -281,7 +283,7 @@ namespace iRacingReplayDirector
 
         void SetFastLap()
         {
-            var timeInSeconds = timestamp.FromNanoToSeconds();
+            var timeInSeconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
             var cd = data.FastestLaps.LastOrDefault(t => t.StartTime <= timeInSeconds && t.StartTime + 15 > timeInSeconds);
 
             CreateAndAssignInstance("FastLap", cd == null, instance =>

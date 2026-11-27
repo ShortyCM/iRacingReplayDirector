@@ -69,8 +69,9 @@ namespace iRacingReplayDirector.Phases.Direction
         {
             try
             {
-                var guessedFileName = Directory.GetFiles(workingFolder, "*.avi")
-                    .Concat(Directory.GetFiles(workingFolder, "*.mp4"))
+                var guessedFileName = Directory.EnumerateFiles(workingFolder)
+                    .Where(path => !Path.GetFileName(path).StartsWith(".ffmpeg-", StringComparison.OrdinalIgnoreCase)
+                        && Video.Ffmpeg.RecordingExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
                     .Select(fn => new { FileName = fn, CreationTime = File.GetCreationTime(fn) })
                     .Where(f => f.CreationTime >= started)
                     .OrderByDescending(f => f.CreationTime)

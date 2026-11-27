@@ -49,10 +49,6 @@ namespace iRacingReplayDirector.Phases.Capturing
             return files.FirstOrDefault(f => f.isIntroVideo);
         }
 
-        public static IEnumerable<SourceReaderExtra> ToSourceReaderExtra(this IEnumerable<CapturedVideoFile> files)
-        {
-            return files.Select(f => new SourceReaderExtra(f.FileName, f));
-        }
     }
 
     public class OverlayData

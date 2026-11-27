@@ -111,7 +111,14 @@ namespace iRacingReplayDirector.Phases
 
         public IRacingReplay WithEncodingOf(int videoBitRate)
         {
-            _WithEncodingOf(videoBitRate);
+            var output = new iRacingReplayDirector.Video.OutputOptions();
+            output.Video.Value = videoBitRate / 1000m;
+            return WithEncodingOf(output);
+        }
+
+        public IRacingReplay WithEncodingOf(iRacingReplayDirector.Video.OutputOptions output)
+        {
+            _WithEncodingOf(output);
             return this;
         }
 

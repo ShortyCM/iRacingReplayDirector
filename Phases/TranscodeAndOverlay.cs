@@ -1,4 +1,4 @@
-﻿// This file is part of iRacingReplayDirector.
+// This file is part of iRacingReplayDirector.
 //
 // Copyright 2014 Dean Netherton
 // https://github.com/vipoo/iRacingReplayDirector.net
@@ -20,10 +20,9 @@
 using iRacingReplayDirector.Phases.Capturing;
 using iRacingReplayDirector.Phases.Transcoding;
 using iRacingSDK.Support;
-using MediaFoundation.Net;
+using iRacingReplayDirector.Video;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -31,7 +30,7 @@ namespace iRacingReplayDirector.Phases
 {
     public class TranscodeAndOverlayMarshaled
     {
-        public static void Apply(string name, string gameDataFile, int videoBitRate, string destFile, bool highlights, Action<long, long> progressReporter, CancellationToken token)
+        public static void Apply(string name, string gameDataFile, OutputOptions output, string destFile, bool highlights, Action<long, long> progressReporter, CancellationToken token)
         {
             var domain = AppDomain.CreateDomain(name, null, new AppDomainSetup());
             try
@@ -44,7 +43,7 @@ namespace iRacingReplayDirector.Phases
                     false,
                     BindingFlags.CreateInstance,
                     null,
-                    new object[] { gameDataFile, videoBitRate, destFile, highlights, (Action<long, long>)hostArgs.ProgressReporter, (Func<bool>)hostArgs.IsAborted, hostArgs.LogRepeater, Settings.Default.PluginName },
+                    new object[] { gameDataFile, output, destFile, highlights, (Action<long, long>)hostArgs.ProgressReporter, (Func<bool>)hostArgs.IsAborted, hostArgs.LogRepeater, Settings.Default.PluginName },
                     null,
                     null);
                 arg.Apply();
@@ -53,7 +52,7 @@ namespace iRacingReplayDirector.Phases
             {
                 TraceError.WriteLine(e.Message);
                 TraceError.WriteLine(e.StackTrace);
-                throw e;
+                throw;
             }
             finally
             {
@@ -106,7 +105,7 @@ namespace iRacingReplayDirector.Phases
         private bool highlights;
         private Func<bool> _isAborted;
         private Action<long, long> _progressReporter;
-        private int videoBitRate;
+        private OutputOptions output;
         private LogRepeater logRepeater;
         private readonly string pluginName;
 
@@ -118,13 +117,13 @@ namespace iRacingReplayDirector.Phases
             this.logRepeater = new LogRepeater();
         }
 
-        public TranscodeAndOverlayArguments(string gameDataFile, int videoBitRate, string destFile, bool highlights, Action<long, long> progressReporter, Func<bool> isAborted, LogRepeater logRepeater, string pluginName)
+        public TranscodeAndOverlayArguments(string gameDataFile, OutputOptions output, string destFile, bool highlights, Action<long, long> progressReporter, Func<bool> isAborted, LogRepeater logRepeater, string pluginName)
         {
             //Constructed in subdomain
             Program.MakePortable(Settings.Default);
 
             this.gameDataFile = gameDataFile;
-            this.videoBitRate = videoBitRate;
+            this.output = output;
             this.destFile = destFile;
             this.highlights = highlights;
             this._progressReporter = progressReporter;
@@ -150,152 +149,25 @@ namespace iRacingReplayDirector.Phases
 
         public void Apply()
         {
-            TranscodeAndOverlay.Apply(gameDataFile, videoBitRate, destFile, highlights, ProgressReporter, IsAborted, pluginName);
+            TranscodeAndOverlay.Apply(gameDataFile, output, destFile, highlights, ProgressReporter, IsAborted, pluginName);
+        }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
         }
     }
 
     public class TranscodeAndOverlay
     {
-        public static void Apply(string gameDataFile, int videoBitRate, string destFile, bool highlights, Action<long, long> progressReporter, Func<bool> isAborted, string pluginName)
+        public static void Apply(string gameDataFile, OutputOptions output, string destination, bool highlights,
+            Action<long, long> progressReporter, Func<bool> isAborted, string pluginName)
         {
-            try
-            {
-                var leaderBoard = new LeaderBoard { OverlayData = OverlayData.FromFile(gameDataFile), PluginName = pluginName };
-
-                var transcoder = new Transcoder
-                {
-                    VideoFiles = leaderBoard.OverlayData.VideoFiles.ToSourceReaderExtra(),
-                    DestinationFile = destFile,
-                    VideoBitRate = videoBitRate
-                };
-
-                new TranscodeAndOverlay(leaderBoard, progressReporter).Process(transcoder, highlights, progressReporter, isAborted);
-            }
-            catch (Exception e)
-            {
-                TraceError.WriteLine(e.Message);
-                TraceError.WriteLine(e.StackTrace);
-                throw e;
-            }
-        }
-
-        readonly LeaderBoard leaderBoard;
-        long totalDuration;
-        readonly Action<long, long> progressReporter;
-
-        private TranscodeAndOverlay(LeaderBoard leaderBoard, Action<long, long> progressReporter)
-        {
-            this.leaderBoard = leaderBoard;
-            this.progressReporter = progressReporter;
-        }
-
-        void Process(Transcoder transcoder, bool highlights, Action<long, long> monitorProgress, Func<bool> isAborted)
-        {
-            try
-            {
-                TraceInfo.WriteLineIf(highlights, "Transcoding highlights to {0}", transcoder.DestinationFile);
-                TraceInfo.WriteLineIf(!highlights, "Transcoding full replay to {0}", transcoder.DestinationFile);
-
-                transcoder.ProcessVideo((readers, saveToSink) =>
-                {
-                    var writeToSink = monitorProgress == null ? saveToSink : MonitorProgress(saveToSink);
-
-                    var fadeSegments = AVOperations.FadeIn(AVOperations.FadeOut(writeToSink));
-                    var edits = highlights ? ApplyEdits(writeToSink) : writeToSink;
-                    var mainBodyOverlays = AVOperations.Overlay(applyRaceDataOverlay, edits);
-                    var introOverlay = AVOperations.Overlay(applyIntroOverlay, fadeSegments);
-
-                    var sourceReaderExtra = readers.FirstOrDefault(r => ((CapturedVideoFile)r.State).isIntroVideo);
-                    if (sourceReaderExtra != null)
-                    {
-                        var introSourceReader = sourceReaderExtra.SourceReader;
-                        var mainReaders = AVOperations.Combine(readers.Skip(1).Select(r => r.SourceReader).ToArray(), Settings.Default.VideoSplitGap);
-
-                        totalDuration += introSourceReader.Duration + mainReaders.Duration;
-
-                        AVOperations.StartConcat(introSourceReader, introOverlay,
-                            AVOperations.Concat(mainReaders, mainBodyOverlays, isAborted), isAborted);
-                    }
-                    else
-                    {
-                        var mainReaders = AVOperations.Combine(readers.Select(r => r.SourceReader).ToArray(), Settings.Default.VideoSplitGap);
-
-                        totalDuration += mainReaders.Duration;
-
-                        AVOperations.Concat(mainReaders, mainBodyOverlays, isAborted)(0, 0);
-                    }
-                });
-
-                TraceInfo.WriteLineIf(highlights, "Done Transcoding highlights to {0}", transcoder.DestinationFile);
-                TraceInfo.WriteLineIf(!highlights, "Done Transcoding full replay to {0}", transcoder.DestinationFile);
-            }
-            catch (Exception e)
-            {
-                TraceError.WriteLine(e.Message);
-                TraceError.WriteLine(e.StackTrace);
-                throw e;
-            }
-        }
-
-        void applyRaceDataOverlay(SourceReaderSampleWithBitmap sample)
-        {
-            if (showClosingFlashCard(sample))
-            {
-                if (sample.Timestamp.FromNanoToSeconds() - leaderBoard.OverlayData.TimeForOutroOverlay.Value > 30)
-                    return;
-
-                var duration = sample.Duration - leaderBoard.OverlayData.TimeForOutroOverlay.Value.FromSecondsToNano();
-                duration = Math.Min(duration, 30.FromSecondsToNano());
-                var period = sample.Timestamp - leaderBoard.OverlayData.TimeForOutroOverlay.Value.FromSecondsToNano();
-
-                leaderBoard.Outro(sample.Graphic, duration, sample.Timestamp, period);
-                return;
-            }
-
-            leaderBoard.Overlay(sample.Graphic, sample.Timestamp);
-        }
-
-        void applyIntroOverlay(SourceReaderSampleWithBitmap sample)
-        {
-            leaderBoard.Intro(sample.Graphic, sample.Duration, sample.Timestamp);
-        }
-
-        ProcessSample ApplyEdits(ProcessSample next)
-        {
-            var cut = next;
-
-            var raceEdits = leaderBoard.OverlayData.RaceEvents.GetRaceEdits();
-            if (raceEdits.Count() == 0)
-                throw new Exception("Unable to create highlight - try reducing time for highlight duration");
-            var firstEdit = raceEdits.First();
-            var lastEdit = raceEdits.Last();
-
-            foreach (var editCut in raceEdits)
-            {
-                cut = AVOperations.Cut(editCut.StartTime.FromSecondsToNano(), editCut.EndTime.FromSecondsToNano(), AVOperations.FadeInOut(cut));
-                totalDuration -= editCut.EndTime.FromSecondsToNano() - editCut.StartTime.FromSecondsToNano();
-            }
-
-            return cut;
-        }
-
-        bool showClosingFlashCard(SourceReaderSample sample)
-        {
-            if (!leaderBoard.OverlayData.TimeForOutroOverlay.HasValue)
-                return false;
-
-            return sample.Timestamp >= leaderBoard.OverlayData.TimeForOutroOverlay.Value.FromSecondsToNano();
-        }
-
-        ProcessSample MonitorProgress(ProcessSample next)
-        {
-            return sample =>
-            {
-                if (!sample.Flags.EndOfStream && progressReporter != null)
-                    progressReporter(sample.SampleTime, totalDuration);
-
-                return next(sample);
-            };
+            var data = OverlayData.FromFile(gameDataFile);
+            var overlay = new LeaderBoard { OverlayData = data, PluginName = pluginName };
+            TraceInfo.WriteLine("Encoding {0}", destination);
+            Transcoder.Replay(data, overlay, destination, output, highlights, Settings.Default.VideoSplitGap, isAborted, progressReporter);
+            TraceInfo.WriteLine("Finished encoding {0}", destination);
         }
     }
 }

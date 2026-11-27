@@ -249,6 +249,11 @@
       <DependentUpon>ConfigureTrackCameras.cs</DependentUpon>
     </Compile>
     <Compile Include="Video\Attributes.cs" />
+    <Compile Include="Video\Ffmpeg.cs" />
+    <Compile Include="Video\OutputOptions.cs" />
+    <Compile Include="OutputSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -317,9 +322,6 @@
       <Name>iRacingSDK</Name>
       <SetPlatform>Platform=AnyCPU</SetPlatform>
     </ProjectReference>
-    <PackageReference Include="MediaFoundation.Net">
-      <Version>2.0.0.32</Version>
-    </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.4</Version>
     </PackageReference>

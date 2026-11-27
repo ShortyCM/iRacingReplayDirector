@@ -75,8 +75,7 @@ namespace iRacingReplayDirector
             this.button2 = new System.Windows.Forms.Button();
             this.cb_HighLightVideoOnly = new System.Windows.Forms.CheckBox();
             this.VideoDetailLabel = new System.Windows.Forms.Label();
-            this.videoBitRate = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
+            this.outputSettingsButton = new System.Windows.Forms.Button();
             this.sourceVideoButton = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.sourceVideoTextBox = new System.Windows.Forms.TextBox();
@@ -355,8 +354,7 @@ namespace iRacingReplayDirector
             this.tabTranscoding.Controls.Add(this.button2);
             this.tabTranscoding.Controls.Add(this.cb_HighLightVideoOnly);
             this.tabTranscoding.Controls.Add(this.VideoDetailLabel);
-            this.tabTranscoding.Controls.Add(this.videoBitRate);
-            this.tabTranscoding.Controls.Add(this.label1);
+            this.tabTranscoding.Controls.Add(this.outputSettingsButton);
             this.tabTranscoding.Controls.Add(this.sourceVideoButton);
             this.tabTranscoding.Controls.Add(this.label3);
             this.tabTranscoding.Controls.Add(this.sourceVideoTextBox);
@@ -413,23 +411,15 @@ namespace iRacingReplayDirector
             this.VideoDetailLabel.Size = new System.Drawing.Size(580, 128);
             this.VideoDetailLabel.TabIndex = 40;
             // 
-            // videoBitRate
+            // outputSettingsButton
             // 
-            this.videoBitRate.Location = new System.Drawing.Point(565, 21);
-            this.videoBitRate.Name = "videoBitRate";
-            this.videoBitRate.Size = new System.Drawing.Size(43, 27);
-            this.videoBitRate.TabIndex = 22;
-            this.videoBitRate.Text = "15";
-            this.videoBitRate.TextChanged += new System.EventHandler(this.videoBitRate_TextChanged);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(426, 21);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(140, 19);
-            this.label1.TabIndex = 21;
-            this.label1.Text = "Video Bitrate (Mbs):";
+            this.outputSettingsButton.Location = new System.Drawing.Point(429, 21);
+            this.outputSettingsButton.Name = "outputSettingsButton";
+            this.outputSettingsButton.Size = new System.Drawing.Size(163, 29);
+            this.outputSettingsButton.TabIndex = 22;
+            this.outputSettingsButton.Text = "Output settings…";
+            this.outputSettingsButton.UseVisualStyleBackColor = true;
+            this.outputSettingsButton.Click += new System.EventHandler(this.outputSettings_Click);
             // 
             // sourceVideoButton
             // 
@@ -603,8 +593,7 @@ namespace iRacingReplayDirector
         private System.Windows.Forms.TextBox workingFolderTextBox;
         private System.Windows.Forms.TabPage tabTranscoding;
         private System.Windows.Forms.Label VideoDetailLabel;
-        private System.Windows.Forms.TextBox videoBitRate;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button outputSettingsButton;
         private System.Windows.Forms.Button sourceVideoButton;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox sourceVideoTextBox;

@@ -1,4 +1,4 @@
-﻿// This file is part of iRacingReplayDirector.
+// This file is part of iRacingReplayDirector.
 //
 // Copyright 2014 Dean Netherton
 // https://github.com/vipoo/iRacingReplayDirector.net
@@ -17,122 +17,116 @@
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 
 using iRacingReplayDirector.Phases.Capturing;
-using iRacingReplayDirector.Phases.Transcoding;
-using MediaFoundation.Net;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace iRacingReplayDirector.Video
 {
-    public class VideoAttributes
+    public static class VideoAttributes
     {
-        public class VideoDetails
+        public sealed class VideoDetails
         {
-            public readonly int[] SupportedAudioBitRates;
-            public readonly int BitRate;
-            public readonly Size FrameSize;
-            public readonly int FrameRate;
-            public readonly string ErrorMessage;
-            public readonly int AudioSamplesPerSecond;
-            public readonly string AudioEncoding;
-            public readonly string VideoEncoding;
-            internal readonly Transcoder Transcoder;
-            public readonly int AudioAverageBytesPerSecond;
-
-            internal VideoDetails(int[] supportedAudioBitRates,
-                int frameRate,
-                Size frameSize,
-                int bitRate,
-                int audioSamplesPerSecond,
-                int audioAverageBytesPerSecond,
-                string videoEncoding,
-                string audioEncoding,
-                Transcoder transcoder,
-                string errorMessage)
-            {
-                this.SupportedAudioBitRates = supportedAudioBitRates;
-                this.FrameRate = frameRate;
-                this.FrameSize = frameSize;
-                this.BitRate = bitRate;
-                this.AudioAverageBytesPerSecond = audioAverageBytesPerSecond;
-                this.AudioSamplesPerSecond = audioSamplesPerSecond;
-                this.AudioEncoding = audioEncoding;
-                this.VideoEncoding = videoEncoding;
-                this.Transcoder = transcoder;
-                this.ErrorMessage = errorMessage;
-            }
+            public int BitRate { get; internal set; }
+            public Size FrameSize { get; internal set; }
+            public double FrameRate { get; internal set; }
+            public int AudioSamplesPerSecond { get; internal set; }
+            public int AudioAverageBytesPerSecond { get; internal set; }
+            public string AudioEncoding { get; internal set; }
+            public string VideoEncoding { get; internal set; }
+            internal bool HasAudio;
+            internal double Duration;
+            internal string RateExpression;
+            internal string AudioLayout;
+            internal string PixelFormat;
         }
 
         public static VideoDetails TestFor(string videoFileName)
         {
-            List<int> supportedAudioBitRates = new List<int>();
+            var metadata = Ffmpeg.Probe(videoFileName);
+            var streams = metadata["streams"] as JArray ?? new JArray();
+            var video = streams.FirstOrDefault(stream => (string)stream["codec_type"] == "video");
+            var audio = streams.FirstOrDefault(stream => (string)stream["codec_type"] == "audio");
+            if (video == null)
+                throw new InvalidOperationException("No video stream in " + videoFileName);
 
-            using (MFSystem.Start())
+            var width = (int)Number(video["width"]);
+            var height = (int)Number(video["height"]);
+            if (width <= 0 || height <= 0)
+                throw new InvalidOperationException("FFprobe could not determine the frame size of " + videoFileName);
+
+            var rate = (string)video["avg_frame_rate"];
+            var framesPerSecond = Fraction(rate);
+            if (framesPerSecond <= 0)
             {
-                var readWriteFactory = new ReadWriteClassFactory();
-
-                var sourceReader = readWriteFactory.CreateSourceReaderFromURL(videoFileName, null);
-
-                var videoStream = sourceReader.Streams.FirstOrDefault(s => s.IsSelected && s.NativeMediaType.IsVideo);
-                if (videoStream.IsNull)
-                    throw new Exception("Unable to find video track within file.");
-
-                var audioStream = sourceReader.Streams.FirstOrDefault(s => s.IsSelected && s.NativeMediaType.IsAudio);
-                if (audioStream.IsNull)
-                    throw new Exception("Unable to find audio track within file.");
-
-                var channels = audioStream.NativeMediaType.AudioNumberOfChannels;
-                var sampleRate = audioStream.NativeMediaType.AudioSamplesPerSecond;
-
-                var types = MFSystem.TranscodeGetAudioOutputAvailableTypes(MediaFoundation.MFMediaType.WMAudioV9, MediaFoundation.Transform.MFT_EnumFlag.All);
-
-                foreach (var bitRate in types
-                    .Where(t => t.AudioSamplesPerSecond == sampleRate)
-                    .Select(t => t.AudioAverageBytesPerSecond)
-                    .Distinct()
-                    .OrderBy(t => t))
-                {
-                    supportedAudioBitRates.Add(bitRate);
-                }
-
-                int videoBitRate = 0;
-                videoStream.NativeMediaType.TryGetBitRate(out videoBitRate);
-
-                var audioSamplesPerSecond = audioStream.NativeMediaType.AudioSamplesPerSecond;
-                var audioAverageBytesPerSecond = audioStream.NativeMediaType.AudioAverageBytesPerSecond;
-
-                var audioSubTypeName = audioStream.CurrentMediaType.SubTypeName;
-                var videoSubTypeName = videoStream.CurrentMediaType.SubTypeName;
-
-                var transcoder = new Transcoder
-                {
-                    VideoFiles = new[] { new SourceReaderExtra(videoFileName, null) },
-                    DestinationFile = Path.ChangeExtension(videoFileName, "wmv"),
-                    VideoBitRate = 5000000
-                };
-
-                var errorMessage = transcoder.TestVideoConversion();
-
-                return new VideoDetails(
-                    supportedAudioBitRates.ToArray(),
-                    videoStream.NativeMediaType.FrameRate.ToInt(),
-                    videoStream.NativeMediaType.FrameSize,
-                    videoBitRate / 1000000,
-                    audioSamplesPerSecond,
-                    audioAverageBytesPerSecond,
-                    videoSubTypeName,
-                    audioSubTypeName,
-                    transcoder,
-                    errorMessage);
+                rate = (string)video["r_frame_rate"];
+                framesPerSecond = Fraction(rate);
             }
+            if (framesPerSecond <= 0)
+                throw new InvalidOperationException("FFprobe could not determine the frame rate of " + videoFileName);
+
+            var duration = Number(video["duration"]);
+            if (duration <= 0)
+                duration = Number(video["duration_ts"]) * Fraction((string)video["time_base"]);
+            if (duration <= 0 && video["tags"] != null)
+            {
+                TimeSpan taggedDuration;
+                if (TimeSpan.TryParse((string)video["tags"]["DURATION"], CultureInfo.InvariantCulture, out taggedDuration))
+                    duration = taggedDuration.TotalSeconds;
+            }
+            var format = metadata["format"];
+            if (duration <= 0 && format != null)
+                duration = Number(format["duration"]);
+            if (duration <= 0 || double.IsInfinity(duration))
+                throw new InvalidOperationException("FFprobe could not determine the duration of " + videoFileName);
+
+            var layout = audio == null ? "" : (string)audio["channel_layout"] ?? "";
+            if (!Regex.IsMatch(layout, @"^[a-zA-Z0-9.()_+-]+$"))
+                layout = audio != null && Number(audio["channels"]) == 1 ? "mono" : "stereo";
+
+            return new VideoDetails
+            {
+                FrameSize = new Size(width, height),
+                FrameRate = framesPerSecond,
+                RateExpression = rate,
+                Duration = duration,
+                BitRate = (int)(Number(video["bit_rate"]) / 1000000),
+                VideoEncoding = (string)video["codec_name"] ?? "Unknown",
+                HasAudio = audio != null,
+                AudioEncoding = audio == null ? "None" : (string)audio["codec_name"] ?? "Unknown",
+                AudioSamplesPerSecond = audio == null ? 0 : (int)Number(audio["sample_rate"]),
+                AudioAverageBytesPerSecond = audio == null ? 0 : (int)(Number(audio["bit_rate"]) / 8),
+                AudioLayout = layout,
+                PixelFormat = (string)video["pix_fmt"] ?? ""
+            };
         }
 
         public static VideoDetails TestFor(OverlayData data)
         {
-            return TestFor(data.VideoFiles.Last().FileName);
+            var video = data.VideoFiles.LastOrDefault();
+            if (video == null)
+                throw new InvalidOperationException("This replay has no recorded video files.");
+            return TestFor(video.FileName);
+        }
+
+        private static double Number(JToken token)
+        {
+            double result;
+            return double.TryParse((string)token, NumberStyles.Float, CultureInfo.InvariantCulture, out result)
+                && !double.IsNaN(result) && !double.IsInfinity(result) ? result : 0;
+        }
+
+        private static double Fraction(string ratio)
+        {
+            if (string.IsNullOrEmpty(ratio) || !Regex.IsMatch(ratio, @"^[0-9]+/[0-9]+$"))
+                return 0;
+            var terms = ratio.Split('/');
+            var numerator = double.Parse(terms[0], CultureInfo.InvariantCulture);
+            var denominator = double.Parse(terms[1], CultureInfo.InvariantCulture);
+            return denominator == 0 ? 0 : numerator / denominator;
         }
     }
 }

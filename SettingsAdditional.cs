@@ -20,6 +20,13 @@ namespace iRacingReplayDirector
 {
     public partial class Settings
     {
+        [System.Configuration.UserScopedSetting, System.Configuration.DefaultSettingValue("")]
+        public string FfmpegOutputOptions
+        {
+            get { return (string)this["FfmpegOutputOptions"]; }
+            set { this["FfmpegOutputOptions"] = value; }
+        }
+
         public readonly int TimingFactorForShortTest = 6;
 
         static double appliedTimingFactor = 1.0;

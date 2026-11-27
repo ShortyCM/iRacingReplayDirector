@@ -24,10 +24,22 @@ Requirements
 * Video capture software (ie. OBS, Nvidia, etc.).
 * The program will use Alt-F9 for recording. Make sure your video capture software is also set to use that keystroke.
 * Set your video capture software to only record the iRacing replay window.
-* Your video capture software must save the video as an .mp4 or .avi file.
+* Put a current FFmpeg build's ffmpeg.exe and ffprobe.exe on PATH or beside Replay Director.
+* Save recordings as MP4, MKV, AVI, MOV, WebM, or MPEG-TS.
 * Replays should capture all competitors. Before the session, under the graphics options in iRacing, set the Max Cars box to a number greater than number of competitors.
-* Only tested with the PCM audio codec
-* Only supports MPEG/H.264 video codec for capture/conversion
+
+Output settings
+===============
+
+In the Video Encoding tab, open **Output settings** to choose the container,
+video encoder, and audio encoder from the installed FFmpeg build. Set a bitrate
+or choose CRF, CQ, QP, or VBR quality when the encoder supports it. You can also set
+encoder-specific options, pixel format, colour matrix and range, and audio
+sample rate and channels. The default is MP4 with H.264 and AAC.
+
+Choose a container that supports both encoders. Hardware encoders also need
+compatible hardware and drivers. Verify Video Conversion exports a short
+preview using the selected settings.
 
 Building
 ========
@@ -56,7 +68,7 @@ HOW TO USE
 10. Press Verify Video.
 11. Browse and select the video that was recorded in step 6.
 12. Click Verify Conversion.
-13. If all this worked correctly, you’ll find 1 or 2 .wmv files in the directory. These are your encoded videos. You’ll only have 1 if you checked the Highlight Video Only checkbox before encoding.
+13. The encoded videos use the container selected in **Output settings**. With Highlight Video Only selected, Replay Director produces one file.
 14. If you’d like, you can now do a test run using the “Short Test Only” checkbox to verify everything is working. This is preferable to doing a 40 minute video and finding out something wasn’t setup correctly. Just follow the instructions below with the “Short Test Only” box checked.
 
 Creating a Video Thereafter
@@ -73,7 +85,7 @@ Creating a Video Thereafter
 10. The process will run for at least the entire length of the original replay so be patient.
 11. Once the race capture is completed, you can then Encode your full race and highlight videos.
 12. When encoding, if the highlight Video Only isn’t checked, it creates 2 videos from your replays; the full replay and a highlight video with a length defined in the Config options. If the Highlight Video Only box is checked under Video Encoding, it will only create the highlight video.
-13. The completed videos have a .wmv extension
+13. The completed videos use the container selected in **Output settings**.
 
 History
 ==============

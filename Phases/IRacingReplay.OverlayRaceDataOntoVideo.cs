@@ -17,60 +17,50 @@
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-using MediaFoundation.Net;
+using iRacingReplayDirector.Video;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace iRacingReplayDirector.Phases
 {
     public partial class IRacingReplay
     {
-        int videoBitRate;
-        string destinationFile;
-        string destinationHighlightsFile;
+        OutputOptions outputOptions;
         string gameDataFile;
 
-        public void _WithEncodingOf(int videoBitRate)
+        public void _WithEncodingOf(OutputOptions output)
         {
-            this.videoBitRate = videoBitRate;
+            outputOptions = output;
         }
 
         public void _WithOverlayFile(string overlayFileName)
         {
-            destinationFile = Path.ChangeExtension(overlayFileName, "wmv");
-            destinationHighlightsFile = Path.ChangeExtension(overlayFileName, ".highlights.wmv");
-
             gameDataFile = overlayFileName;
         }
 
         public void _OverlayRaceDataOntoVideo(Action<long, long> progress, Action completed, bool highlightOnly, bool bShutdownAfterCompleted, CancellationToken token)
         {
-            bool TranscodeFull = !highlightOnly;
-
-            var transcodeHigh = new Task(() => TranscodeAndOverlayMarshaled.Apply("HighLights", gameDataFile, videoBitRate, destinationHighlightsFile, true, highlightOnly ? progress : null, token));
-            var transcodeFull = new Task(() => TranscodeAndOverlayMarshaled.Apply("Full", gameDataFile, videoBitRate, destinationFile, false, progress, token));
-
-            using (MFSystem.Start())
+            try
             {
-                var waits = new List<Task>();
-
-                transcodeHigh.Start();
-                waits.Add(transcodeHigh);
-
-                //Seem to have some kind of bug in MediaFoundation - where if two threads attempt to open source Readers to the same file, we get exception raised.
-                //To work around issue, delay the start of the second transcoder - so we dont have two threads opening at the same time.
-                if (TranscodeFull)
+                token.ThrowIfCancellationRequested();
+                if (!highlightOnly)
                 {
-                    Thread.Sleep(10000);
-                    transcodeFull.Start();
-                    waits.Add(transcodeFull);
+                    TranscodeAndOverlayMarshaled.Apply("Full", gameDataFile, outputOptions,
+                        Path.ChangeExtension(gameDataFile, outputOptions.Container), false,
+                        (time, duration) => progress(time, duration * 2), token);
                 }
-
-                Task.WaitAll(waits.ToArray());
+                token.ThrowIfCancellationRequested();
+                TranscodeAndOverlayMarshaled.Apply("Highlights", gameDataFile, outputOptions,
+                    Path.ChangeExtension(gameDataFile, ".highlights." + outputOptions.Container), true,
+                    highlightOnly ? progress : (time, duration) => progress(duration + time, duration * 2), token);
+            }
+            catch (OperationCanceledException)
+            {
+                if (!token.IsCancellationRequested)
+                    throw;
+                return;
             }
             completed();
 

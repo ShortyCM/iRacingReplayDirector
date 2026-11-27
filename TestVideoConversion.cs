@@ -18,13 +18,11 @@
 
 using iRacingReplayDirector.Support;
 using iRacingReplayDirector.Video;
+using iRacingReplayDirector.Phases.Transcoding;
 using iRacingSDK.Support;
-using MediaFoundation.Net;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -61,7 +59,7 @@ namespace iRacingReplayDirector
             var dlg = new OpenFileDialog();
 
             dlg.InitialDirectory = sourceFilenameTextBox.Text;
-            dlg.Filter = "AVI files (*.avi)|*.avi|MPEG 4 (*.mp4)|*.mp4|All files (*.*)|*.*";
+            dlg.Filter = Ffmpeg.RecordingFilter;
 
             if (dlg.ShowDialog() == DialogResult.OK)
                 sourceFilenameTextBox.Text = dlg.FileName;
@@ -107,51 +105,21 @@ namespace iRacingReplayDirector
 
         void TranscodeVideoTest(string filename)
         {
-            List<int> supportedAudioBitRates = new List<int>();
-
-            using (MFSystem.Start())
+            var details = VideoAttributes.TestFor(filename);
+            TraceInfo.WriteLine("Video: {0} {1}x{2} at {3:0.###} fps. Audio: {4}.",
+                details.VideoEncoding, details.FrameSize.Width, details.FrameSize.Height,
+                details.FrameRate, details.AudioEncoding);
+            var lastSecond = -1L;
+            var destination = Transcoder.Preview(filename, details, OutputOptions.Load(), ticks =>
             {
-                var details = VideoAttributes.TestFor(filename);
-
-                TraceInfo.WriteLine("Frame Rate: {0}, Frame Size: {1}x{2}, Video: {3} @ {4}Mbs, Audio: {5}, {6}Khz @ {7}Kbs, ".F
-                        (details.FrameRate,
-                        details.FrameSize.Width,
-                        details.FrameSize.Height,
-                        details.VideoEncoding,
-                        details.BitRate == 0 ? "-- " : details.BitRate.ToString(),
-                        details.AudioEncoding,
-                        details.AudioSamplesPerSecond / 1000,
-                        details.AudioAverageBytesPerSecond / 1000));
-
-                TraceInfo.WriteLine("Begining video re-encoding.");
-
-                details.Transcoder.ProcessVideo((readers, saveToSink) =>
-                {
-                    int lastSecond = 0;
-                    var fn = AVOperations.FadeIn(saveToSink);
-
-                    readers.First().SourceReader.Samples(sample =>
-                    {
-                        if (sample.Stream.CurrentMediaType.IsVideo && sample.Sample != null)
-                        {
-                            var s = (int)sample.Sample.SampleTime.FromNanoToSeconds();
-                            if (s != lastSecond)
-                                TraceInfo.WriteLine("Converted: {0} seconds", s);
-                            lastSecond = s;
-
-                            if (s > 10)
-                                return false;
-                        }
-
-                        return fn(sample);
-
-                    });
-                });
-
-                TraceInfo.WriteLine("Video converted.  Review the video file {0} to confirm it looks OK.", details.Transcoder.DestinationFile);
-                TraceInfo.WriteLine("Success!");
-            }
+                var seconds = ticks / TimeSpan.TicksPerSecond;
+                if (seconds != lastSecond)
+                    TraceInfo.WriteLine("Encoded {0} seconds", seconds);
+                lastSecond = seconds;
+            });
+            TraceInfo.WriteLine("Video converted. Review {0} to check the result.", destination);
         }
+
 
         private void sourceFilenameTextBox_TextChanged(object sender, EventArgs e)
         {

@@ -50,7 +50,6 @@ namespace iRacingReplayDirector
 
         System.Windows.Forms.Timer fileWatchTimer;
 
-        int videoBitRateNumber = 15;
         IRacingReplay iRacingProcess;
 
         enum States { Idle, CapturingGameData, Transcoding };
@@ -94,7 +93,7 @@ namespace iRacingReplayDirector
                     transcodeCancelButton.Visible = false;
                     transcodeProgressBar.Visible = false;
                     transcodeProgressBar.Value = 0;
-                    videoBitRate.Enabled =
+                    outputSettingsButton.Enabled =
                     workingFolderTextBox.Enabled =
                     workingFolderButton.Enabled =
                     sourceVideoTextBox.Enabled =
@@ -106,7 +105,7 @@ namespace iRacingReplayDirector
                     transcodeVideoButton.Enabled = false;
                     transcodeCancelButton.Visible = false;
                     transcodeProgressBar.Visible = false;
-                    videoBitRate.Enabled =
+                    outputSettingsButton.Enabled =
                     workingFolderTextBox.Enabled =
                     workingFolderButton.Enabled =
                     sourceVideoTextBox.Enabled =
@@ -114,12 +113,13 @@ namespace iRacingReplayDirector
                     break;
 
                 case States.Transcoding:
-                    BeginProcessButton.Enabled = Directory.Exists(workingFolderTextBox.Text) && isConnected && trackCamerasDefined;
+                    BeginProcessButton.Enabled = false;
                     configureTrackCamerasLabel.Visible = isConnected && !trackCamerasDefined;
                     transcodeVideoButton.Enabled = false;
                     transcodeCancelButton.Visible = true;
+                    transcodeCancelButton.Enabled = true;
                     transcodeProgressBar.Visible = true;
-                    videoBitRate.Enabled =
+                    outputSettingsButton.Enabled =
                     workingFolderTextBox.Enabled =
                     workingFolderButton.Enabled =
                     sourceVideoTextBox.Enabled =
@@ -212,7 +212,6 @@ namespace iRacingReplayDirector
             fileWatchTimer.Tick += (s, a) => OnGameDataFileChanged();
             fileWatchTimer.Start();
 
-            videoBitRate.Text = Settings.Default.videoBitRate.ToString();
             sourceVideoTextBox.Text = Settings.Default.lastVideoFile;
 
             BeginProcessButton.Enabled = false;
@@ -381,7 +380,7 @@ namespace iRacingReplayDirector
             NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED);
 
             iRacingProcess = new IRacingReplay()
-                .WithEncodingOf(videoBitRate: videoBitRateNumber * 1000000)
+                .WithEncodingOf(OutputOptions.Load())
                 .WithOverlayFile(overlayFile: sourceVideoTextBox.Text)
                 .OverlayRaceDataOntoVideo(OnTranscoderProgress, OnTranscoderCompleted, cb_HighLightVideoOnly.Checked, cb_ShutdownAfterEncode.Checked)
                 .InTheBackground(errorMessage =>
@@ -407,7 +406,7 @@ namespace iRacingReplayDirector
         void transcodeCancel_Click(object sender, EventArgs e)
         {
             iRacingProcess.RequestAbort();
-            State = States.Idle;
+            transcodeCancelButton.Enabled = false;
         }
 
         void sourceVideoTextBox_TextChanged(object sender, EventArgs e)
@@ -463,8 +462,8 @@ namespace iRacingReplayDirector
                         details.BitRate == 0 ? "-- " : details.BitRate.ToString(),
                         details.AudioEncoding,
                         details.AudioSamplesPerSecond / 1000,
-                        details.AudioAverageBytesPerSecond / 1000),
-                    sourceVideoFileErrorMessage: details.ErrorMessage);
+                        details.AudioAverageBytesPerSecond * 8 / 1000),
+                    sourceVideoFileErrorMessage: "");
             }
             catch (Exception ex)
             {
@@ -474,6 +473,10 @@ namespace iRacingReplayDirector
                 lookForAudioBitRates.Tick += sourceVideoTextBox_TextChanged;
                 lookForAudioBitRates.Interval = 5000;
                 lookForAudioBitRates.Start();
+            }
+            finally
+            {
+                OnGameDataFileChanged();
             }
         }
 
@@ -494,12 +497,17 @@ namespace iRacingReplayDirector
                 transcodeVideoButton.Enabled = IsReadyForTranscoding();
         }
 
-        void videoBitRate_TextChanged(object sender, EventArgs e)
+        void outputSettings_Click(object sender, EventArgs e)
         {
-            if (int.TryParse(videoBitRate.Text, out videoBitRateNumber))
+            try
             {
-                Settings.Default.videoBitRate = videoBitRateNumber;
-                Settings.Default.Save();
+                using (var dialog = new OutputSettingsDialog(OutputOptions.Load()))
+                    if (dialog.ShowDialog(this) == DialogResult.OK)
+                        dialog.Output.Save();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Output settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
