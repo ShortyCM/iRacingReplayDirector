@@ -21,6 +21,7 @@ namespace iRacingReplayDirector
             this.labelCopyright.Text = AssemblyCopyright;
             this.textBoxDescription.Text = AssemblyDescription;
             this.trackingId.Text = Settings.Default.TrackingID;
+            WindowPlacement.Remember(this);
         }
 
         public string AssemblyTitle

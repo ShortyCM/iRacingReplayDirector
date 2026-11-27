@@ -31,6 +31,7 @@ namespace iRacingReplayDirector
             this.settings = settings;
             InitializeComponent();
             AddPanelComponents();
+            WindowPlacement.Remember(this);
         }
 
         void AddPanelComponents()

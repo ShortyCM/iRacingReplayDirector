@@ -39,6 +39,7 @@ namespace iRacingReplayDirector
         public ConfigureTrackCameras()
         {
             InitializeComponent();
+            WindowPlacement.Remember(this);
         }
 
         void cameraList_SelectedIndexChanged(object sender, EventArgs e)

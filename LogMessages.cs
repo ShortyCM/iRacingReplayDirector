@@ -7,6 +7,7 @@ namespace iRacingReplayDirector
         public LogMessages()
         {
             InitializeComponent();
+            WindowPlacement.Remember(this);
         }
 
         public TextBox TraceMessage

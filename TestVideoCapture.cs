@@ -38,6 +38,7 @@ namespace iRacingReplayDirector
         public TestVideoCapture()
         {
             InitializeComponent();
+            WindowPlacement.Remember(this);
         }
 
         void TestVideoCapture_Load(object sender, EventArgs e)

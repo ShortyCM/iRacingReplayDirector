@@ -25,6 +25,7 @@ namespace iRacingReplayDirector
         public ConfigurePlugins()
         {
             InitializeComponent();
+            WindowPlacement.Remember(this);
             //twoColumnDropDown<PluginDetails>(pluginNames, (v, i) => i == 0 ? v.FriendlyName : "by {0}".F(v.Owner));
             //twoColumnDropDown<VersionItem>(pluginVersions, (v, i) => i == 0 ? v.VersionStamp : v.DateTimeStamp);
         }

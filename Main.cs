@@ -166,6 +166,7 @@ namespace iRacingReplayDirector
             iracingEvents = new iRacingEvents();
 
             InitializeComponent();
+            WindowPlacement.Remember(this);
         }
 
         string GetDefaultLogFileName()
@@ -254,8 +255,10 @@ namespace iRacingReplayDirector
             Properties.Settings.Default.bEncodeVideoAfterCapture = cb_EncodeVideoAfterCapture.Checked;
             Properties.Settings.Default.bShortTestOnly = cb_ShortTestOnly.Checked;
             Properties.Settings.Default.bHighLightVideoOnly = cb_HighLightVideoOnly.Checked;
-            //enable change of standard setting to use NewSettingsDialog only after intensive testings that all values can be reliably set using the advanced settings dialog
             Properties.Settings.Default.Save();
+
+            if (logMessagges != null && logMessagges.Visible)
+                WindowPlacement.Save(logMessagges);
         }
 
         void LogSystemInformation()

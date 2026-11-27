@@ -67,6 +67,7 @@ namespace iRacingReplayDirector
             root.SetColumnSpan(buttons, 2);
             AcceptButton = save;
             CancelButton = cancel;
+            WindowPlacement.Remember(this);
         }
 
         private static readonly string[] Matrices = { "auto", "bt709", "smpte170m", "bt2020nc" };

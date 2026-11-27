@@ -27,6 +27,20 @@ namespace iRacingReplayDirector
             set { this["FfmpegOutputOptions"] = value; }
         }
 
+        [System.Configuration.UserScopedSetting, System.Configuration.DefaultSettingValue("")]
+        public System.Drawing.Point? MainWindowPosition
+        {
+            get { return (System.Drawing.Point?)this["MainWindowPosition"]; }
+            set { this["MainWindowPosition"] = value; }
+        }
+
+        [System.Configuration.UserScopedSetting, System.Configuration.DefaultSettingValue("")]
+        public string WindowPositions
+        {
+            get { return (string)this["WindowPositions"]; }
+            set { this["WindowPositions"] = value; }
+        }
+
         public readonly int TimingFactorForShortTest = 6;
 
         static double appliedTimingFactor = 1.0;
