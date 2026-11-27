@@ -49,7 +49,7 @@ namespace iRacingReplayDirector.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool bEncodeVideoAfterCapture {
             get {
                 return ((bool)(this["bEncodeVideoAfterCapture"]));
@@ -73,7 +73,7 @@ namespace iRacingReplayDirector.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool bHighLightVideoOnly {
             get {
                 return ((bool)(this["bHighLightVideoOnly"]));

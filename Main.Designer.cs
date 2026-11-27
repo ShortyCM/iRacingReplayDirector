@@ -376,7 +376,6 @@ namespace iRacingReplayDirector
             this.cb_HighLightVideoOnly.AutoSize = true;
             this.cb_HighLightVideoOnly.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.cb_HighLightVideoOnly.Checked = global::iRacingReplayDirector.Properties.Settings.Default.bHighLightVideoOnly;
-            this.cb_HighLightVideoOnly.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cb_HighLightVideoOnly.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::iRacingReplayDirector.Properties.Settings.Default, "bHighLightVideoOnly", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.cb_HighLightVideoOnly.Location = new System.Drawing.Point(429, 55);
             this.cb_HighLightVideoOnly.Name = "cb_HighLightVideoOnly";
