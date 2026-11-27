@@ -35,7 +35,8 @@ In the Video Encoding tab, open **Output settings** to choose the container,
 video encoder, and audio encoder from the installed FFmpeg build. Set a bitrate
 or choose CRF, CQ, QP, or VBR quality when the encoder supports it. You can also set
 encoder-specific options, pixel format, colour matrix and range, and audio
-sample rate and channels. The default is MP4 with H.264 and AAC.
+sample rate and channels. The default is Matroska (.mkv) with x265 at CRF 17
+and AAC at 224 kb/s.
 
 Choose a container that supports both encoders. Hardware encoders also need
 compatible hardware and drivers. Verify Video Conversion exports a short

@@ -231,12 +231,13 @@ namespace iRacingReplayDirector
                 if (EncoderSettings.AudioQualityMaximum(selected.Name) > 0)
                     mode.Items.Add("VBR quality");
                 mode.SelectedItem = mode.Items.Contains("CRF") ? "CRF"
-                    : "Encoder default";
+                    : selected.Name == "aac" ? "Bitrate" : "Encoder default";
             }
 
             private void UpdateRateControl()
             {
                 var rateMode = mode.SelectedItem as string;
+                var selected = encoder.SelectedItem as Ffmpeg.Encoder;
                 value.Enabled = rateMode != null && rateMode != "Encoder default";
                 valueLabel.Text = rateMode == "Bitrate" ? "Bitrate (kb/s)" : value.Enabled ? rateMode : "";
                 value.DecimalPlaces = value.Enabled && (rateMode == "VBR quality"
@@ -246,11 +247,11 @@ namespace iRacingReplayDirector
                 if (rateMode == "Bitrate")
                 {
                     value.Minimum = 1;
-                    value.Value = isVideo ? 15000 : 128;
+                    value.Value = isVideo ? 15000 : selected.Name == "aac" ? OutputOptions.DefaultAacBitrate : 128;
                 }
                 else if (rateMode == "VBR quality")
                 {
-                    var name = ((Ffmpeg.Encoder)encoder.SelectedItem).Name;
+                    var name = selected.Name;
                     value.Minimum = name == "aac" ? 0.1m : name == "libvorbis" ? -1 : 0;
                     value.Maximum = EncoderSettings.AudioQualityMaximum(name);
                     value.Value = name == "aac" ? 1 : name == "libvorbis" ? 3 : 2;
@@ -258,7 +259,7 @@ namespace iRacingReplayDirector
                 }
                 else if (value.Enabled)
                 {
-                    var name = ((Ffmpeg.Encoder)encoder.SelectedItem).Name;
+                    var name = selected.Name;
                     var max = name == "libx264" || name == "libx265" || name.EndsWith("_nvenc") ? 51 : 63;
                     var description = capabilities.Options[rateMode.ToLowerInvariant()];
                     var range = Regex.Match(description, @"\(from (-?\d+(\.\d+)?) to (\d+(\.\d+)?)\)");
@@ -271,7 +272,8 @@ namespace iRacingReplayDirector
                     }
                     else
                         value.Maximum = max;
-                    value.Value = Math.Max(value.Minimum, Math.Min(value.Maximum, 23));
+                    var initialQuality = name == "libx265" && rateMode == "CRF" ? OutputOptions.DefaultX265Crf : 23;
+                    value.Value = Math.Max(value.Minimum, Math.Min(value.Maximum, initialQuality));
                 }
                 if (rateMode != "VBR quality")
                     toolTip.SetToolTip(value, "");

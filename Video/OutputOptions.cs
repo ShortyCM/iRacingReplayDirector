@@ -10,13 +10,15 @@ namespace iRacingReplayDirector.Video
     public sealed class OutputOptions
     {
         internal static readonly string[] Containers = { "mp4", "mkv", "mov", "webm", "avi", "ts", "ogv", "flv", "nut", "mxf", "wmv", "asf", "3gp", "dv", "gif" };
+        internal const int DefaultX265Crf = 17;
+        internal const int DefaultAacBitrate = 224;
 
-        public string Container = "mp4";
+        public string Container = "mkv";
         public string PixelFormat = "";
         public string ColourMatrix = "auto";
         public string ColourRange = "auto";
-        public EncoderSettings Video = new EncoderSettings { Encoder = "libx264", Mode = "Bitrate", Value = 15000 };
-        public EncoderSettings Audio = new EncoderSettings { Encoder = "aac", Mode = "Bitrate", Value = 128 };
+        public EncoderSettings Video = new EncoderSettings { Encoder = "libx265", Mode = "CRF", Value = DefaultX265Crf };
+        public EncoderSettings Audio = new EncoderSettings { Encoder = "aac", Mode = "Bitrate", Value = DefaultAacBitrate };
 
         internal static OutputOptions Load()
         {
@@ -32,10 +34,7 @@ namespace iRacingReplayDirector.Video
                 }
                 catch (JsonException) { }
             }
-            var defaults = new OutputOptions();
-            if (Settings.Default.videoBitRate > 0)
-                defaults.Video.Value = (decimal)Settings.Default.videoBitRate * 1000;
-            return defaults;
+            return new OutputOptions();
         }
 
         internal void Save()
