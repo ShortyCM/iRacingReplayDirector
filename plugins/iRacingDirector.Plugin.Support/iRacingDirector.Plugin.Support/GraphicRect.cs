@@ -105,19 +105,27 @@ namespace iRacingDirector.Plugin
 
         public virtual GraphicRect DrawText(string text, int? leftOffset = null, int? topOffset = null)
         {
-            var lo = this.leftOffset;
-            var to = this.topOffset;
-
-            if (leftOffset.HasValue)
-                lo = leftOffset.Value;
-
-            if (topOffset.HasValue)
-                to = topOffset.Value;
-
-            g.TextRenderingHint = TextRenderingHint.AntiAlias;
-            var rect2 = new Rectangle(r.Left + lo + TEXT_LEFT_OFFSET_MAGIC, r.Top + to, r.Width + TEXT_RIGHT_PADDING_MAGIC, r.Height);
-            g.DrawString(text, f, b, rect2, sf);
+            DrawText(text, leftOffset ?? this.leftOffset, topOffset ?? this.topOffset, sf);
             return this;
+        }
+
+        public GraphicRect DrawSingleLineText(string text)
+        {
+            using (var format = sf == null ? new StringFormat() : (StringFormat)sf.Clone())
+            {
+                format.FormatFlags |= StringFormatFlags.NoWrap;
+                format.Trimming = StringTrimming.EllipsisCharacter;
+                DrawText(text, leftOffset, topOffset, format);
+            }
+            return this;
+        }
+
+        private void DrawText(string text, int leftOffset, int topOffset, StringFormat format)
+        {
+            g.TextRenderingHint = TextRenderingHint.AntiAlias;
+            var textBounds = new Rectangle(r.Left + leftOffset + TEXT_LEFT_OFFSET_MAGIC,
+                r.Top + topOffset, r.Width + TEXT_RIGHT_PADDING_MAGIC, r.Height);
+            g.DrawString(text, f, b, textBounds, format);
         }
 
         public virtual GraphicRect WithTextOffset(int? leftOffset = null, int? topOffset = null)
