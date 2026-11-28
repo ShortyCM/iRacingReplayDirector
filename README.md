@@ -46,10 +46,12 @@ results have their own cards.
 The leaderboard cycles through the remaining drivers every 10 seconds after
 pinning the leaders. Single-class races pin the top 10 and page through the rest
 in rows 11–20. Two classes get 10 rows each with five leaders pinned. Three
-classes get 7, 7, and 6 rows with three leaders pinned per class. Classes are
-ordered by the SDK's relative speed value, breaking ties by class ID. Four or
-more classes use the overall leaderboard with the camera car in the last row
-when it falls outside the top 20.
+classes get 7, 7, and 6 rows with three leaders pinned per class. Unused class
+rows go to other classes in display order. The last page fills the rotating
+rows and ends with the last-place driver, overlapping the previous page when
+needed. Classes are ordered by the SDK's relative speed value, breaking ties
+by class ID. Four or more classes use the overall leaderboard with the camera
+car in the last row when it falls outside the top 20.
 
 Qualifying shows 10 drivers per page for 10 seconds. A final page with up to
 five drivers gets 5 seconds when it follows another page.

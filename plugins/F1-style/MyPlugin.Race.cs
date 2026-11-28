@@ -73,27 +73,34 @@ namespace iRacingDirector.Plugin.F1Style
 
         private Standing[] GetLeaderboardRows(Standing[] standings, Standing focused, long elapsed)
         {
-            var rows = new Standing[LeaderboardRows];
+            var rows = new Standing[Math.Min(standings.Length, LeaderboardRows)];
             var page = Math.Max(0, elapsed) / LeaderboardPageDuration;
             if (!multiclass)
             {
-                FillLeaderboardSection(standings, rows, 0, LeaderboardRows, 10, page);
+                FillLeaderboardSection(standings, rows, 0, rows.Length, 10, page);
             }
             else if ((classOrder.Length == 2 || classOrder.Length == 3) && standings.All(s => s.Driver.DriverDetails != null))
             {
                 var byClass = standings.ToLookup(s => s.Driver.DriverDetails.CarClassID);
+                var sections = classOrder.Select(id => byClass[id].ToArray()).ToArray();
                 var sectionRows = classOrder.Length == 2 ? 10 : 7;
                 var pinnedRows = classOrder.Length == 2 ? 5 : 3;
-                for (var i = 0; i < classOrder.Length; i++)
+                var rowCounts = sections.Select((section, i) =>
+                    Math.Min(section.Length, Math.Min(sectionRows, LeaderboardRows - i * sectionRows))).ToArray();
+                var spareRows = rows.Length - rowCounts.Sum();
+                var startRow = 0;
+                for (var i = 0; i < sections.Length; i++)
                 {
-                    var startRow = i * sectionRows;
-                    var rowCount = Math.Min(sectionRows, LeaderboardRows - startRow);
-                    FillLeaderboardSection(byClass[classOrder[i]].ToArray(), rows, startRow, rowCount, pinnedRows, page);
+                    var addedRows = Math.Min(spareRows, sections[i].Length - rowCounts[i]);
+                    var rowCount = rowCounts[i] + addedRows;
+                    FillLeaderboardSection(sections[i], rows, startRow, rowCount, pinnedRows, page);
+                    spareRows -= addedRows;
+                    startRow += rowCount;
                 }
             }
             else
             {
-                Array.Copy(standings, rows, Math.Min(standings.Length, rows.Length));
+                Array.Copy(standings, rows, rows.Length);
                 if (focused != null && standings.Length > rows.Length && !rows.Contains(focused))
                     rows[rows.Length - 1] = focused;
             }
@@ -112,9 +119,9 @@ namespace iRacingDirector.Plugin.F1Style
 
             var pageSize = rowCount - pinnedRows;
             var pageCount = (standings.Length - pinnedRows + pageSize - 1) / pageSize;
-            var pageStart = pinnedRows + (int)(page % pageCount) * pageSize;
+            var pageStart = Math.Min(pinnedRows + (int)(page % pageCount) * pageSize, standings.Length - pageSize);
             Array.Copy(standings, 0, rows, startRow, pinnedRows);
-            Array.Copy(standings, pageStart, rows, startRow + pinnedRows, Math.Min(pageSize, standings.Length - pageStart));
+            Array.Copy(standings, pageStart, rows, startRow + pinnedRows, pageSize);
         }
 
         private void DrawLeaderboard(Standing[] standings, long focusId, long elapsed)
