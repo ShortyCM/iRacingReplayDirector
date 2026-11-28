@@ -214,7 +214,7 @@ namespace iRacingReplayDirector
                 comboBox.Items.Add(name);
             }
 
-            comboBox.SelectedItem = settings[setting];
+            comboBox.SelectedItem = PluginProxy.ResolveName((string)settings[setting]);
 
             onSave.Add(() => settings[setting] = comboBox.SelectedItem);
             panel.Controls.Add(comboBox);

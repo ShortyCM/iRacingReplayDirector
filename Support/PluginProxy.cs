@@ -27,6 +27,7 @@ namespace iRacingReplayDirector
         static readonly string PluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "plugins\\");
         const string StandardOverlayDirectory = "iRacingDirector.Plugin.StandardOverlays";
         const string StandardOverlaysName = "StandardOverlays";
+        const string RetiredOverlayName = "JockeOverlays";
 
         dynamic plugin;
         Type pluginType;
@@ -41,6 +42,7 @@ namespace iRacingReplayDirector
             {
                 return System.IO.Directory.EnumerateDirectories(PluginPath)
                     .Select(t => t.Substring(PluginPath.Length))
+                    .Where(t => !string.Equals(t, RetiredOverlayName, StringComparison.OrdinalIgnoreCase))
                     .Select(t => t == StandardOverlayDirectory ? StandardOverlaysName : t)
                     .ToArray();
             }
@@ -56,6 +58,7 @@ namespace iRacingReplayDirector
 
         public PluginProxy(string pluginName)
         {
+            pluginName = ResolveName(pluginName);
             if (!pluginName.ToLower().EndsWith(".dll"))
                 pluginName = Path.Combine(PluginPath, pluginName, pluginName + ".dll");
 
@@ -83,6 +86,13 @@ namespace iRacingReplayDirector
                 TraceDebug.WriteLine(ex.ToString());
             }
             
+        }
+
+        internal static string ResolveName(string pluginName)
+        {
+            return string.IsNullOrWhiteSpace(pluginName) ||
+                string.Equals(pluginName, RetiredOverlayName, StringComparison.OrdinalIgnoreCase)
+                ? StandardOverlaysName : pluginName;
         }
 
         public void DrawIntroFlashCard(long duration)
