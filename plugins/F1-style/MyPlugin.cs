@@ -174,12 +174,15 @@ namespace iRacingDirector.Plugin.F1Style
             if (seriesLogo == null)
                 return;
 
-            const int left = 56, top = 622, width = 110, height = 52;
+            const int left = 56, width = 110, height = 52;
             var scale = Math.Min((double)width / seriesLogo.Width, (double)height / seriesLogo.Height);
             var logoWidth = (int)Math.Round(seriesLogo.Width * scale);
             var logoHeight = (int)Math.Round(seriesLogo.Height * scale);
-            DrawArtwork(seriesLogo, new Rectangle(left + (width - logoWidth) / 2, top + (height - logoHeight) / 2,
-                logoWidth, logoHeight));
+            var top = GapBarTop + (GapBarHeight - logoHeight) / 2f;
+            var state = Graphics.Save();
+            Graphics.TranslateTransform(left + (width - logoWidth) / 2, top);
+            DrawArtwork(seriesLogo, new Rectangle(0, 0, logoWidth, logoHeight));
+            Graphics.Restore(state);
         }
 
         private static Bitmap LoadFastestLapBadge()
