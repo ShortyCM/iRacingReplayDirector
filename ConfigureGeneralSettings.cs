@@ -84,7 +84,7 @@ If not selected, then all battles can be selected, but your perferred drivers wi
                 @"Remove numbers from the end of driver usernames",
                 "RemoveNumbersFromNames");
             f.AddBlankRow();
-            f.AddIntField("Show Results after nth position", "Show the results flash cards, after the driver in the selected position finishes.", "ResultsFlashCardPosition");
+            f.AddIntField("Show Results after nth position", "Show the results flash cards after the finishers through the selected position in each class have crossed the line.", "ResultsFlashCardPosition");
 
             f.AddBlankRow();
             f.AddTimeField("Time to wait for IRacing to re-open", "The time after clicking 'Begin Capture', the application will wait, for iRacing to reload on the screen.  For larger replays or bigger tracks, you may need to increase this value. Default 6 seconds", "PeriodWaitForIRacingSwitch");

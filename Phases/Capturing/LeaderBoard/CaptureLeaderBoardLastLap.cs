@@ -54,19 +54,35 @@ namespace iRacingReplayDirector.Phases.Capturing.LeaderBoard
 
                 var position = (int)result.Position;
                 AnnounceFinish(data, relativeTime, car, position, ref leaderBoard);
-                MarkResultFlashCardStart(data, relativeTime, position);
             }
 
+            MarkResultFlashCardStart(data, relativeTime);
             overlayData.LeaderBoards.Add(leaderBoard);
         }
 
-        void MarkResultFlashCardStart(DataSample data, TimeSpan relativeTime, int position)
+        void MarkResultFlashCardStart(DataSample data, TimeSpan relativeTime)
         {
-            if (!overlayData.TimeForOutroOverlay.HasValue && position == Settings.Default.ResultsFlashCardPosition)
-            {
-                overlayData.TimeForOutroOverlay = relativeTime.TotalSeconds;
-                TraceInfo.WriteLine("{0} Mark show results flash card.", data.Telemetry.SessionTimeSpan);
-            }
+            var position = Settings.Default.ResultsFlashCardPosition;
+            if (overlayData.TimeForOutroOverlay.HasValue || position <= 0)
+                return;
+
+            // ClassPosition is zero-based. Overall position breaks ties if class positions are missing.
+            var requiredFinishers = data.Telemetry.RaceCars
+                .Select(car => new { Car = car, Result = car.ResultPosition })
+                .Where(entry => entry.Result != null && entry.Result.Position > 0 &&
+                    entry.Result.ClassPosition >= 0 && entry.Result.ClassPosition < position)
+                .GroupBy(entry => entry.Car.Details.Driver.CarClassID)
+                .SelectMany(group => group.OrderBy(entry => entry.Result.ClassPosition)
+                    .ThenBy(entry => entry.Result.Position).Take(position))
+                .Where(entry => entry.Result.ReasonOutId == 0)
+                .Select(entry => entry.Car)
+                .ToArray();
+
+            if (requiredFinishers.Length == 0 || requiredFinishers.Any(car => !car.HasSeenCheckeredFlag))
+                return;
+
+            overlayData.TimeForOutroOverlay = relativeTime.TotalSeconds;
+            TraceInfo.WriteLine("{0} Mark show results flash card.", data.Telemetry.SessionTimeSpan);
         }
 
         void AnnounceFinish(DataSample data, TimeSpan relativeTime, Car car, int position, ref OverlayData.LeaderBoard leaderBoard)
