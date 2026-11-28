@@ -98,13 +98,13 @@ namespace iRacingReplayDirector.Phases
             }
 
             videoCapture.Activate(workingFolder);
-            var startTime = DateTime.Now;
+            var captureClock = Stopwatch.StartNew();
 
             overlayData.CapturedVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             foreach (var data in samples)
             {
-                var relativeTime = DateTime.Now - startTime;
+                var relativeTime = captureClock.Elapsed;
 
                 TraceDebug.WriteLine("Recording at time: {0}", relativeTime);
 

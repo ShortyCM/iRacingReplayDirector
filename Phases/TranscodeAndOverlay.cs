@@ -165,6 +165,9 @@ namespace iRacingReplayDirector.Phases
         {
             var data = OverlayData.FromFile(gameDataFile);
             var overlay = new LeaderBoard { OverlayData = data, PluginName = pluginName };
+            if (string.Equals(pluginName, "F1-style", StringComparison.OrdinalIgnoreCase) && data.Broadcast.Timing.Count == 0)
+                TraceInfo.WriteLine("This capture has no saved F1-style timing samples for gaps or speeds.");
+
             TraceInfo.WriteLine("Encoding {0}", destination);
             Transcoder.Replay(data, overlay, destination, output, highlights, Settings.Default.VideoSplitGap, isAborted, progressReporter);
             TraceInfo.WriteLine("Finished encoding {0}", destination);

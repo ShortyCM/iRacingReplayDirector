@@ -44,7 +44,8 @@ and final results have their own cards.
 
 Use **F1-style class labels** to supply display names for class IDs. Enter
 comma-separated assignments such as `2523=LMP2,4011=GT3`. New captures
-save the timing and event history used by these panels.
+save the timing and event history used by these panels. Captures made before
+F1-style need a fresh recording to add gaps and speeds.
 
 Building
 ========

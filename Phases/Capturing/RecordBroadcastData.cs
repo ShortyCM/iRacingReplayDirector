@@ -45,7 +45,7 @@ namespace iRacingReplayDirector.Phases.Capturing
         {
             var telemetry = data.Telemetry;
             var time = relativeTime.TotalSeconds;
-            var sessionTime = telemetry.SessionTime;
+            var sessionTime = ReplayTime(data);
             var distances = telemetry.CarIdxDistance;
             var takeSnapshot = time >= nextSnapshot;
             if (trackKm <= 0 && data.SessionData.WeekendInfo != null)
@@ -87,6 +87,22 @@ namespace iRacingReplayDirector.Phases.Capturing
                 nextSnapshot = time + TimingPeriod;
                 lastSnapshotTime = sessionTime;
             }
+        }
+
+        private static double ReplayTime(DataSample data)
+        {
+            var telemetry = data.Telemetry;
+            var weekend = data.SessionData.WeekendInfo;
+            object value;
+            if (weekend != null && string.Equals(weekend.SimMode, "replay", StringComparison.OrdinalIgnoreCase)
+                && telemetry.TryGetValue("ReplaySessionTime", out value) && value is double)
+            {
+                var replayTime = (double)value;
+                if (replayTime > 0 && !double.IsInfinity(replayTime))
+                    return replayTime;
+            }
+
+            return telemetry.SessionTime;
         }
 
         private void RecordRadio(Telemetry telemetry, double time)
