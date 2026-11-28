@@ -9,6 +9,9 @@ namespace iRacingDirector.Plugin.F1Style
 {
     public partial class MyPlugin
     {
+        private const int GapBarTop = 658;
+        private const int GapBarHeight = 27;
+
         private sealed class Standing
         {
             public Driver Driver;
@@ -30,7 +33,6 @@ namespace iRacingDirector.Plugin.F1Style
                 var focusId = CamDriver != null && CamDriver.DriverDetails != null
                     ? CamDriver.DriverDetails.CarIdx : -1;
                 DrawLeaderboard(standings, focusId);
-                DrawPositionBar(standings, seconds, focusId);
                 DrawGaps(standings, seconds);
                 DrawRadio(seconds);
                 DrawPitTransitions(seconds);
@@ -76,7 +78,7 @@ namespace iRacingDirector.Plugin.F1Style
             }
 
             var firstDriverRow = showLapRow ? 118 : 93;
-            var maxRows = showLapRow ? 19 : 20;
+            const int maxRows = 20;
             var visible = standings.Take(maxRows).ToArray();
             var focused = standings.FirstOrDefault(s => s.Driver.DriverDetails != null && s.Driver.DriverDetails.CarIdx == focusId);
             if (focused != null && standings.Length > maxRows && !visible.Contains(focused))
@@ -118,33 +120,6 @@ namespace iRacingDirector.Plugin.F1Style
                 return remaining.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
 
             return position;
-        }
-
-        private void DrawPositionBar(Standing[] standings, double seconds, long focusId)
-        {
-            if (standings.Length == 0)
-                return;
-
-            const int driversPerPage = 5;
-            var pages = (standings.Length + driversPerPage - 1) / driversPerPage;
-            var page = (int)(Math.Max(0, seconds) / 5) % pages;
-            Block(Black, new RectangleF(0, 658, 1280, 27));
-            var items = standings.Skip(page * driversPerPage).Take(driversPerPage).ToArray();
-            for (var i = 0; i < items.Length; i++)
-            {
-                var standing = items[i];
-                var driver = standing.Driver;
-                var area = new RectangleF(95 + i * 218, 658, 217, 27);
-                var focused = driver.DriverDetails != null && driver.DriverDetails.CarIdx == focusId;
-                DriverRow(area, multiclass ? standing.ClassPosition : driver.Position.Value,
-                    Accent(driver.DriverDetails, driver.Position.Value), focused ? Grey : Black);
-                var label = multiclass ? ClassLabel(driver.DriverDetails) : "";
-                if (label.Length > 0)
-                    Text(label, Small, Muted, new RectangleF(area.X + 52, area.Y, 50, area.Height));
-                var left = label.Length > 0 ? 106 : 54;
-                Text(ShortName(driver.UserName), Bold, Color.White,
-                    new RectangleF(area.X + left, area.Y, area.Width - left - 5, area.Height), CentreText);
-            }
         }
 
         private void DrawGaps(Standing[] standings, double seconds)
@@ -212,7 +187,7 @@ namespace iRacingDirector.Plugin.F1Style
         private void DrawGapDriver(TimingDriver timing, float x, bool focused)
         {
             var driver = DriverAt(timing.CarIdx);
-            var row = new RectangleF(x, 614, 245, 27);
+            var row = new RectangleF(x, GapBarTop, 245, GapBarHeight);
             DriverRow(row, multiclass ? timing.ClassPosition : timing.Position,
                 Accent(driver, timing.Position), focused ? Dark : Black);
             if (driver == null)
@@ -226,14 +201,14 @@ namespace iRacingDirector.Plugin.F1Style
             if (timing.SpeedKph >= 0)
             {
                 Text(timing.SpeedKph.ToString(CultureInfo.InvariantCulture), Small, Color.White,
-                    new RectangleF(x + 211, 614, 32, 15), CentreText);
-                Text("km/h", Small, Muted, new RectangleF(x + 211, 627, 32, 13), CentreText);
+                    new RectangleF(x + 211, row.Top, 32, 15), CentreText);
+                Text("km/h", Small, Muted, new RectangleF(x + 211, row.Top + 13, 32, 13), CentreText);
             }
         }
 
         private void DrawInterval(string gap, float x, int width)
         {
-            var area = new RectangleF(x, 614, width, 27);
+            var area = new RectangleF(x, GapBarTop, width, GapBarHeight);
             Block(Grey, area);
             Text(gap ?? "–", Bold, Color.White, area, CentreText);
         }
