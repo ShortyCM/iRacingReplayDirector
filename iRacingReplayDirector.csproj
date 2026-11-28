@@ -223,6 +223,7 @@
     <Compile Include="Phases\Analysis\Incident.cs" />
     <Compile Include="Phases\CaptureRace.cs" />
     <Compile Include="Phases\Capturing\CaptureLeaderBoard.cs" />
+    <Compile Include="Phases\Capturing\RecordBroadcastData.cs" />
     <Compile Include="Phases\IRacingReplay.cs" />
     <Compile Include="Phases\WhenIRacingStarts.cs" />
     <Compile Include="Program.cs" />
@@ -309,6 +310,11 @@
     <PackageReference Include="HotkeyListener">
       <Version>1.9.0</Version>
     </PackageReference>
+    <ProjectReference Include="plugins\iRacingDirector.Plugin.Support\iRacingDirector.Plugin.Support\iRacingDirector.Plugin.Support.csproj">
+      <Project>{CEC2BB31-324D-41E3-83C8-A5C35C63129B}</Project>
+      <Name>iRacingDirector.Plugin.Support</Name>
+      <SetPlatform>Platform=AnyCPU</SetPlatform>
+    </ProjectReference>
     <ProjectReference Include="..\iRacingSDK.Net\iRacingSDK.csproj">
       <Project>{5422AE20-F220-4BE1-9E61-5296981ABB5C}</Project>
       <Name>iRacingSDK</Name>

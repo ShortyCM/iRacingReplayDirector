@@ -28,6 +28,13 @@ namespace iRacingReplayDirector
         }
 
         [System.Configuration.UserScopedSetting, System.Configuration.DefaultSettingValue("")]
+        public string F1StyleClassLabels
+        {
+            get { return (string)this["F1StyleClassLabels"]; }
+            set { this["F1StyleClassLabels"] = value; }
+        }
+
+        [System.Configuration.UserScopedSetting, System.Configuration.DefaultSettingValue("")]
         public System.Drawing.Point? MainWindowPosition
         {
             get { return (System.Drawing.Point?)this["MainWindowPosition"]; }

@@ -47,9 +47,11 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BroadcastData.cs" />
     <Compile Include="CenterGraphicRect.cs" />
     <Compile Include="DescriptionAttribute.cs" />
     <Compile Include="EventData.cs" />

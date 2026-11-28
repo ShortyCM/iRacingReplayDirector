@@ -94,6 +94,7 @@ If not selected, then all battles can be selected, but your perferred drivers wi
 
             f.AddBlankRow();
             f.AddPluginSelectorField();
+            f.AddStringField("F1-style class labels", "Optional labels by iRacing class ID. Use comma-separated ID=label entries.", "F1StyleClassLabels");
 
             this.onSave = f.OnSave;
         }

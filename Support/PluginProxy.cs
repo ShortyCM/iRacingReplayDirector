@@ -116,7 +116,7 @@ namespace iRacingReplayDirector
 
         public void SetReplayConfig(string filePath)
         {
-            this.data = OverlayData.FromFile(filePath);
+            SetReplayConfig(OverlayData.FromFile(filePath));
         }
 
         public PluginProxySettings[] GetSettingsList()
@@ -140,14 +140,24 @@ namespace iRacingReplayDirector
 
         public void SetReplayConfig(OverlayData data)
         {
+            if (ReferenceEquals(this.data, data))
+                return;
+
             this.data = data;
+            SetEventData();
+            var broadcastField = pluginType.GetField("Broadcast");
+            if (broadcastField != null)
+                broadcastField.SetValue(plugin, data.Broadcast);
+
+            var classLabelsField = pluginType.GetField("ClassLabels");
+            if (classLabelsField != null)
+                classLabelsField.SetValue(plugin, Settings.Default.F1StyleClassLabels);
         }
 
         public void InjectFields(long timestamp, string[] perferredDriverNames)
         {
             this.timestamp = timestamp;
 
-            SetEventData();
             SetLeaderboard();
             SetCamDriver();
             SetMessageSet();
@@ -223,7 +233,7 @@ namespace iRacingReplayDirector
             var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
             var lb = data.LeaderBoards.LastOrDefault(t => t.StartTime <= seconds);
             if (lb == null)
-                lb = data.LeaderBoards.First();
+                lb = data.LeaderBoards.FirstOrDefault();
 
             var leaderboardInstance = CreateAndAssignInstance("LeaderBoard", lb == null, CreateInstance);
 
@@ -266,7 +276,13 @@ namespace iRacingReplayDirector
             SetField(driverInstance, "PitStopCount", driver.PitStopCount);
             SetField(driverInstance, "ShortName", driver.ShortName);
             SetField(driverInstance, "Position", driver.Position);
-            SetField(driverInstance, "DriverDetails", data.SessionData.DriverInfo.CompetingDrivers.FirstOrDefault(d => d.CarIdx == driver.CarIdx));
+            var drivers = data.SessionData.DriverInfo.Drivers;
+            var details = driver.CarIdx >= 0
+                ? drivers.FirstOrDefault(d => d.CarIdx == driver.CarIdx)
+                : drivers.FirstOrDefault(d => !d.IsPaceCar && d.IsSpectator == 0 &&
+                    d.CarNumber == driver.CarNumber && d.UserName == driver.UserName)
+                    ?? drivers.FirstOrDefault(d => !d.IsPaceCar && d.IsSpectator == 0 && d.CarNumber == driver.CarNumber);
+            SetField(driverInstance, "DriverDetails", details);
         }
 
         public void SetCamDriver()
@@ -274,7 +290,7 @@ namespace iRacingReplayDirector
             var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
             var cd = data.CamDrivers.LastOrDefault(t => t.StartTime <= seconds);
             if (cd == null)
-                cd = data.CamDrivers.First();
+                cd = data.CamDrivers.FirstOrDefault();
 
             CreateAndAssignInstance("CamDriver", cd == null, instance => AssignDriverInstance(instance, cd.CurrentDriver));
         }

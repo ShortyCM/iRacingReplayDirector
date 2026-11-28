@@ -33,6 +33,19 @@ default is Matroska (.mkv) with x265 at CRF 17 and AAC at 224 kb/s.
 Choose a container that supports both encoders. Hardware encoders also need
 compatible hardware and drivers.
 
+F1-style overlay
+================
+
+Select **F1-style** under **Configure General Settings → Overlay**. The overlay
+uses a paged Position Bar, a left leaderboard, and a two- or three-driver gap
+panel based on the camera car. It also shows class fastest laps, pit entry and
+exit, and TeamRadio when the replay supplies a transmitting driver. Qualifying
+and final results have their own cards.
+
+Use **F1-style class labels** to supply display names for class IDs. Enter
+comma-separated assignments such as `2523=LMP2,4011=GT3`. New captures
+save the timing and event history used by these panels.
+
 Building
 ========
 

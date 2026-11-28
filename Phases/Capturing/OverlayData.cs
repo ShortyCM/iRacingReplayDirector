@@ -17,6 +17,7 @@
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using iRacingDirector.Plugin;
 using iRacingReplayDirector.Phases.Transcoding;
 using iRacingSDK;
 using iRacingSDK.Support;
@@ -119,8 +120,7 @@ namespace iRacingReplayDirector.Phases.Capturing
             public string UserName;
             public int PitStopCount;
 
-            [XmlIgnore]
-            public int CarIdx;
+            public int CarIdx = -1;
 
             [XmlIgnore]
             public string ShortName
@@ -159,6 +159,7 @@ namespace iRacingReplayDirector.Phases.Capturing
         public List<CamDriver> CamDrivers = new List<CamDriver>();
         public List<FastLap> FastestLaps = new List<FastLap>();
         public List<MessageState> MessageStates = new List<MessageState>();
+        public BroadcastData Broadcast = new BroadcastData();
         public SessionData SessionData;
         public List<RaceEvent> RaceEvents = new List<RaceEvent>();
         public double? TimeForOutroOverlay = null;
