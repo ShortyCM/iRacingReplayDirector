@@ -64,6 +64,7 @@ namespace iRacingDirector.Plugin.F1Style
                 Block(Black, new RectangleF(278, footerTop, 724, 30));
                 Text(qualifying ? QualifyingFooter() : RaceFooter(results), Regular, Color.White,
                     new RectangleF(294, footerTop, 691, 30));
+                DrawSeriesLogo();
             });
         }
 

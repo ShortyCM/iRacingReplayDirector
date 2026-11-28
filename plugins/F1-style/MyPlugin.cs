@@ -48,6 +48,7 @@ namespace iRacingDirector.Plugin.F1Style
         private Dictionary<long, SessionDriver> drivers;
         private Dictionary<long, ClassStyle> styles;
         private long[] classOrder;
+        private Bitmap seriesLogo;
         private bool multiclass;
 
         private sealed class ClassStyle
@@ -62,6 +63,8 @@ namespace iRacingDirector.Plugin.F1Style
                 return;
 
             currentEvent = EventData;
+            seriesLogo?.Dispose();
+            seriesLogo = LoadSeriesLogo(EventData.WeekendInfo.SeriesID);
             var entries = EventData.CompetingDrivers.Where(d => !d.IsPaceCar && d.IsSpectator == 0);
             drivers = entries.GroupBy(d => d.CarIdx).ToDictionary(d => d.Key, d => d.First());
             var groups = drivers.Values.GroupBy(d => d.CarClassID).ToArray();
@@ -150,6 +153,33 @@ namespace iRacingDirector.Plugin.F1Style
             {
                 Graphics.Restore(state);
             }
+        }
+
+        private static Bitmap LoadSeriesLogo(long seriesId)
+        {
+            var resource = "iRacingDirector.Plugin.F1Style.Logos.SeriesID-" +
+                seriesId.ToString(CultureInfo.InvariantCulture) + ".png";
+            using (var stream = typeof(MyPlugin).Assembly.GetManifestResourceStream(resource))
+            {
+                if (stream == null)
+                    return null;
+
+                using (var image = new Bitmap(stream))
+                    return image.Clone(new Rectangle(0, 0, image.Width, image.Height), PixelFormat.Format32bppArgb);
+            }
+        }
+
+        private void DrawSeriesLogo()
+        {
+            if (seriesLogo == null)
+                return;
+
+            const int left = 56, top = 622, width = 110, height = 52;
+            var scale = Math.Min((double)width / seriesLogo.Width, (double)height / seriesLogo.Height);
+            var logoWidth = (int)Math.Round(seriesLogo.Width * scale);
+            var logoHeight = (int)Math.Round(seriesLogo.Height * scale);
+            DrawArtwork(seriesLogo, new Rectangle(left + (width - logoWidth) / 2, top + (height - logoHeight) / 2,
+                logoWidth, logoHeight));
         }
 
         private static Bitmap LoadFastestLapBadge()

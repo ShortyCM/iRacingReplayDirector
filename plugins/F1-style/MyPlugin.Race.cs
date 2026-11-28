@@ -49,6 +49,7 @@ namespace iRacingDirector.Plugin.F1Style
                 DrawRadio(seconds);
                 DrawPitTransitions(seconds);
                 DrawFastestLap(seconds);
+                DrawSeriesLogo();
             });
         }
 
