@@ -32,7 +32,12 @@ namespace iRacingDirector.Plugin.F1Style
                 var standings = GetStandings();
                 var focusId = CamDriver != null && CamDriver.DriverDetails != null
                     ? CamDriver.DriverDetails.CarIdx : -1;
+
+                var leaderboardState = Graphics.Save();
+                Graphics.TranslateTransform(47.5f, 0);
                 DrawLeaderboard(standings, focusId);
+                Graphics.Restore(leaderboardState);
+
                 DrawGaps(standings, seconds);
                 DrawRadio(seconds);
                 DrawPitTransitions(seconds);
@@ -60,6 +65,7 @@ namespace iRacingDirector.Plugin.F1Style
 
         private void DrawLeaderboard(Standing[] standings, long focusId)
         {
+            const int width = 205;
             if (standings.Length == 0)
                 return;
 
@@ -68,13 +74,13 @@ namespace iRacingDirector.Plugin.F1Style
             var showLapRow = !string.IsNullOrWhiteSpace(racePosition) && !string.IsNullOrWhiteSpace(lapCounter)
                 && !string.Equals(racePosition, lapCounter, StringComparison.Ordinal);
 
-            Block(Black, new RectangleF(95, 67, 205, 25));
+            Block(Black, new RectangleF(0, 67, width, 25));
             Text(string.IsNullOrWhiteSpace(racePosition) ? lapCounter : racePosition, Bold, Color.White,
-                new RectangleF(103, 67, 191, 25));
+                new RectangleF(8, 67, 191, 25));
             if (showLapRow)
             {
-                Block(Grey, new RectangleF(95, 93, 205, 24));
-                Text(lapCounter, Bold, Color.White, new RectangleF(103, 93, 191, 24));
+                Block(Grey, new RectangleF(0, 93, width, 24));
+                Text(lapCounter, Bold, Color.White, new RectangleF(8, 93, 191, 24));
             }
 
             var firstDriverRow = showLapRow ? 118 : 93;
@@ -89,7 +95,7 @@ namespace iRacingDirector.Plugin.F1Style
                 var standing = visible[i];
                 var driver = standing.Driver;
                 var position = multiclass ? standing.ClassPosition : driver.Position.Value;
-                var row = new RectangleF(95, firstDriverRow + i * 25, 205, 24);
+                var row = new RectangleF(0, firstDriverRow + i * 25, width, 24);
                 var background = standing == focused ? Color.FromArgb(242, 64, 64, 64) : i % 2 == 0 ? Dark : Grey;
                 DriverRow(row, position, Accent(driver.DriverDetails, driver.Position.Value), background, 42);
 
@@ -99,8 +105,8 @@ namespace iRacingDirector.Plugin.F1Style
                 var textRight = row.Right - (fastest ? row.Height : 0) - 6;
                 var classWidth = label.Length <= 4 ? 31 : 49;
                 if (label.Length > 0)
-                    Text(label, Small, Muted, new RectangleF(143, row.Y, classWidth, row.Height));
-                var nameX = label.Length > 0 ? 146 + classWidth : 143;
+                    Text(label, Small, Muted, new RectangleF(48, row.Y, classWidth, row.Height));
+                var nameX = label.Length > 0 ? 51 + classWidth : 48;
                 Text(ShortName(driver.UserName), standing == focused ? Bold : Regular, Color.White,
                     new RectangleF(nameX, row.Y, textRight - (hasStops ? 22 : 0) - nameX, row.Height));
                 if (hasStops)
