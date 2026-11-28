@@ -15,10 +15,9 @@ namespace iRacingDirector.Plugin.F1Style
             public int ClassPosition;
         }
 
-        private readonly Dictionary<int, LapTimeUpdate> lapTimes = new Dictionary<int, LapTimeUpdate>();
         private readonly Dictionary<long, LapTimeUpdate> classRecords = new Dictionary<long, LapTimeUpdate>();
-        private int nextLapTime;
-        private double lapTimesThrough;
+        private int nextLapUpdate;
+        private double classRecordsThrough;
 
         public void RaceOverlay(long timestamp)
         {
@@ -34,7 +33,7 @@ namespace iRacingDirector.Plugin.F1Style
                 DrawGaps(standings, seconds);
                 DrawRadio(seconds);
                 DrawPitTransitions(seconds);
-                DrawFastestLaps(seconds);
+                DrawFastestLap(seconds);
             });
         }
 
@@ -288,63 +287,52 @@ namespace iRacingDirector.Plugin.F1Style
             }
         }
 
-        private void ResetLapTimes()
+        private void ResetClassRecords()
         {
-            lapTimes.Clear();
             classRecords.Clear();
-            nextLapTime = 0;
-            lapTimesThrough = 0;
+            nextLapUpdate = 0;
+            classRecordsThrough = 0;
         }
 
-        private void DrawFastestLaps(double seconds)
+        private void DrawFastestLap(double seconds)
         {
             if (Broadcast == null || Broadcast.BestLaps.Count == 0)
             {
                 if (FastLap != null && FastLap.Driver != null)
-                {
-                    Block(Black, new RectangleF(1007, 67, 233, 48));
-                    Text("Fastest Lap", Bold, Purple, new RectangleF(1013, 67, 221, 23));
-                    Text(ShortName(FastLap.Driver.UserName), Regular, Color.White, new RectangleF(1013, 91, 141, 23));
-                    Text(SecondsText(FastLap.Time), Bold, Color.White, new RectangleF(1154, 91, 80, 23), RightText);
-                }
+                    DrawFastestLapCard("Fastest Lap", FastLap.Driver.UserName, FastLap.Time);
                 return;
             }
 
-            if (seconds < lapTimesThrough)
-                ResetLapTimes();
-            lapTimesThrough = seconds;
-            while (nextLapTime < Broadcast.BestLaps.Count && Broadcast.BestLaps[nextLapTime].Time <= seconds)
+            if (seconds < classRecordsThrough)
+                ResetClassRecords();
+            classRecordsThrough = seconds;
+            while (nextLapUpdate < Broadcast.BestLaps.Count && Broadcast.BestLaps[nextLapUpdate].Time <= seconds)
             {
-                var lap = Broadcast.BestLaps[nextLapTime++];
-                lapTimes[lap.CarIdx] = lap;
+                var lap = Broadcast.BestLaps[nextLapUpdate++];
+                if (!lap.ClassBest)
+                    continue;
+
                 var driver = DriverAt(lap.CarIdx);
-                if (lap.ClassBest && driver != null)
+                if (driver != null)
                     classRecords[driver.CarClassID] = lap;
             }
 
-            var active = classRecords.Where(record => seconds - record.Value.Time < 15).OrderBy(record => record.Key).ToArray();
+            var active = classRecords.Where(entry => seconds - entry.Value.Time < 15).OrderBy(entry => entry.Key).ToArray();
             if (active.Length == 0)
                 return;
 
-            var recordClass = active[(int)(Math.Max(0, seconds) / 5) % active.Length];
-            var leader = DriverAt(recordClass.Value.CarIdx);
-            var laps = lapTimes.Values.Where(lap =>
-            {
-                var driver = DriverAt(lap.CarIdx);
-                return driver != null && driver.CarClassID == recordClass.Key;
-            }).OrderBy(lap => lap.LapSeconds).Take(10).ToArray();
-            Block(Black, new RectangleF(1007, 67, 233, 25));
-            var title = multiclass ? "Fastest Laps  ·  " + ClassLabel(leader) : "Fastest Laps";
-            Text(title, Bold, Purple, new RectangleF(1013, 67, 221, 25));
-            for (var i = 0; i < laps.Length; i++)
-            {
-                var lap = laps[i];
-                var driver = DriverAt(lap.CarIdx);
-                var row = new RectangleF(1007, 93 + i * 25, 233, 24);
-                DriverRow(row, i + 1, Accent(driver, i + 1), i % 2 == 0 ? Dark : Grey, 42);
-                Text(ShortName(driver.UserName), Regular, Color.White, new RectangleF(1055, row.Y, 106, row.Height));
-                Text(SecondsText(lap.LapSeconds), Bold, Color.White, new RectangleF(1161, row.Y, 72, row.Height), RightText);
-            }
+            var record = active[(int)(Math.Max(0, seconds) / 5) % active.Length].Value;
+            var leader = DriverAt(record.CarIdx);
+            var title = multiclass ? "Fastest Lap  ·  " + ClassLabel(leader) : "Fastest Lap";
+            DrawFastestLapCard(title, leader.UserName, record.LapSeconds);
+        }
+
+        private void DrawFastestLapCard(string title, string driverName, double seconds)
+        {
+            Block(Black, new RectangleF(1007, 67, 233, 48));
+            Text(title, Bold, Purple, new RectangleF(1013, 67, 221, 23));
+            Text(ShortName(driverName), Regular, Color.White, new RectangleF(1013, 91, 141, 23));
+            Text(SecondsText(seconds), Bold, Color.White, new RectangleF(1154, 91, 80, 23), RightText);
         }
     }
 }

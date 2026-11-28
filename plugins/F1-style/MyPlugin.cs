@@ -88,7 +88,7 @@ namespace iRacingDirector.Plugin.F1Style
                     Colour = ParseColour(colour, Accents[styles.Count % Accents.Length])
                 };
             }
-            ResetLapTimes();
+            ResetClassRecords();
         }
 
         private static Color ParseColour(string value, Color fallback)
