@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Globalization;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace iRacingDirector.Plugin.F1Style
         public LeaderBoard LeaderBoard;
         public Driver CamDriver;
         public FastLap FastLap;
+        public Driver FastestLapHolder;
         public BroadcastData Broadcast;
         public string ClassLabels;
 
@@ -25,7 +27,6 @@ namespace iRacingDirector.Plugin.F1Style
         private static readonly Color Grey = Color.FromArgb(238, 49, 49, 49);
         private static readonly Color PositionGrey = Color.FromArgb(126, 126, 126);
         private static readonly Color Muted = Color.FromArgb(208, 208, 208);
-        private static readonly Color Purple = Color.FromArgb(220, 104, 221);
         private static readonly Color[] Accents =
         {
             Color.FromArgb(62, 216, 204), Color.FromArgb(217, 30, 35), Color.FromArgb(51, 58, 202),
@@ -38,6 +39,10 @@ namespace iRacingDirector.Plugin.F1Style
         private static readonly StringFormat LeftText = TextFormat(StringAlignment.Near);
         private static readonly StringFormat CentreText = TextFormat(StringAlignment.Center);
         private static readonly StringFormat RightText = TextFormat(StringAlignment.Far);
+        private static readonly Bitmap FastestLapBadge = LoadFastestLapBadge();
+        private static readonly Bitmap FastestLapStopwatch = FastestLapBadge.Clone(
+            new Rectangle(0, 0, FastestLapBadge.Height, FastestLapBadge.Height), PixelFormat.Format32bppArgb);
+        private static readonly ImageAttributes ArtworkEdges = CreateArtworkEdges();
 
         private EventData currentEvent;
         private Dictionary<long, SessionDriver> drivers;
@@ -134,6 +139,7 @@ namespace iRacingDirector.Plugin.F1Style
                     bounds.Top + (bounds.Height - 720 * scale) / 2);
                 Graphics.ScaleTransform(scale, scale);
                 Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 Graphics.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
                 draw();
             }
@@ -141,6 +147,25 @@ namespace iRacingDirector.Plugin.F1Style
             {
                 Graphics.Restore(state);
             }
+        }
+
+        private static Bitmap LoadFastestLapBadge()
+        {
+            using (var stream = typeof(MyPlugin).Assembly.GetManifestResourceStream("iRacingDirector.Plugin.F1Style.FastestLap.png"))
+            using (var image = new Bitmap(stream))
+                return image.Clone(new Rectangle(190, 494, 732, 143), PixelFormat.Format32bppArgb);
+        }
+
+        private static ImageAttributes CreateArtworkEdges()
+        {
+            var attributes = new ImageAttributes();
+            attributes.SetWrapMode(WrapMode.TileFlipXY);
+            return attributes;
+        }
+
+        private void DrawArtwork(Bitmap image, Rectangle destination)
+        {
+            Graphics.DrawImage(image, destination, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, ArtworkEdges);
         }
 
         private static StringFormat TextFormat(StringAlignment alignment)
@@ -164,8 +189,17 @@ namespace iRacingDirector.Plugin.F1Style
 
         private void Block(Color colour, RectangleF area)
         {
-            using (var brush = new SolidBrush(colour))
-                Graphics.FillRectangle(brush, area);
+            var smoothing = Graphics.SmoothingMode;
+            Graphics.SmoothingMode = SmoothingMode.None;
+            try
+            {
+                using (var brush = new SolidBrush(colour))
+                    Graphics.FillRectangle(brush, area);
+            }
+            finally
+            {
+                Graphics.SmoothingMode = smoothing;
+            }
         }
 
         private void Stripe(RectangleF area, Color colour, int width)

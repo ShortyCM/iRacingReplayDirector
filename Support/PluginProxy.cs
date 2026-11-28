@@ -310,15 +310,17 @@ namespace iRacingReplayDirector
         void SetFastLap()
         {
             var timeInSeconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
-            var cd = data.FastestLaps.LastOrDefault(t => t.StartTime <= timeInSeconds && t.StartTime + 15 > timeInSeconds);
+            var cd = data.FastestLaps.LastOrDefault(t => t.StartTime <= timeInSeconds);
 
-            CreateAndAssignInstance("FastLap", cd == null, instance =>
+            CreateAndAssignInstance("FastLap", cd == null || cd.StartTime + 15 <= timeInSeconds, instance =>
             {
                 SetField(instance, "Time", cd.Time);
 
                 var driverType = instance.GetType().GetField("Driver").FieldType;
                 SetField(instance, "Driver", CreateDriverInstance(driverType, cd.Driver));
             });
+            var hasClassRecords = data.Broadcast != null && data.Broadcast.BestLaps.Count > 0;
+            CreateAndAssignInstance("FastestLapHolder", cd == null || hasClassRecords, instance => AssignDriverInstance(instance, cd.Driver));
         }
 
         void SetField(object instance, string name, object value)

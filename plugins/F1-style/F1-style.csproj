@@ -41,6 +41,9 @@
     <Compile Include="MyPlugin.cs" />
     <Compile Include="MyPlugin.Race.cs" />
     <Compile Include="MyPlugin.Results.cs" />
+    <EmbeddedResource Include="Assets\FastestLap.png">
+      <LogicalName>iRacingDirector.Plugin.F1Style.FastestLap.png</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\CopyToReplayDirectorOutput.targets" />
