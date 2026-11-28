@@ -9,30 +9,26 @@ namespace iRacingDirector.Plugin.F1Style
 {
     public partial class MyPlugin
     {
-        private const int RaceResultsPageSize = 11;
-
         public void IntroFlashCard(long duration, long timestamp)
         {
-            DrawClassification(true, duration, timestamp);
+            DrawClassification(true, timestamp);
         }
 
         public void OutroFlashCard(long duration, long timestamp)
         {
-            DrawClassification(false, duration, timestamp);
+            DrawClassification(false, timestamp);
         }
 
-        private void DrawClassification(bool qualifying, long duration, long timestamp)
+        private void DrawClassification(bool qualifying, long timestamp)
         {
             ReadSession();
-            var results = qualifying ? EventData.QualifyingClassification : FinalClassification();
+            var results = qualifying ? EventData.QualifyingClassification : EventData.FinalClassification;
             if (results.Length == 0)
                 return;
 
-            var pageSize = qualifying ? FlashCardPagingCalculator.QualifyingDriversPerPage : RaceResultsPageSize;
-            var pageCount = (results.Length + pageSize - 1) / pageSize;
-            var progress = duration > 0 ? Math.Min(1, Math.Max(0, (double)timestamp / duration)) : 0;
-            var page = qualifying ? FlashCardPagingCalculator.GetQualifyingPageNumber(results.Length, timestamp)
-                : Math.Min(pageCount - 1, (int)(progress * pageCount));
+            var pageSize = FlashCardPagingCalculator.ResultsDriversPerPage;
+            var pageCount = FlashCardPagingCalculator.GetResultsPageCount(results.Length);
+            var page = FlashCardPagingCalculator.GetResultsPageNumber(results.Length, timestamp);
             OnCanvas(() =>
             {
                 Block(Black, new RectangleF(278, 121, 724, 47));
@@ -69,17 +65,6 @@ namespace iRacingDirector.Plugin.F1Style
                 Text(qualifying ? QualifyingFooter() : RaceFooter(results), Regular, Color.White,
                     new RectangleF(294, footerTop, 691, 30));
             });
-        }
-
-        private Result[] FinalClassification()
-        {
-            var race = EventData.Raw.SessionInfo.Sessions.FirstOrDefault(session => session.SessionType != null
-                && session.SessionType.IndexOf("race", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (race == null || race.ResultsPositions == null)
-                return new Result[0];
-
-            return race.ResultsPositions.Where(row => row.Position > 0 && DriverAt(row.CarIdx) != null)
-                .OrderBy(row => row.Position).ToArray();
         }
 
         private string QualifyingFooter()

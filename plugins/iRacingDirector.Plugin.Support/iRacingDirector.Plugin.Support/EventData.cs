@@ -10,6 +10,7 @@ namespace iRacingDirector.Plugin
     {
         private SessionData sessionData;
         private Result[] qualifyingClassification;
+        private Result[] finalClassification;
 
         public EventData(SessionData sessionData)
         {
@@ -24,22 +25,25 @@ namespace iRacingDirector.Plugin
 
         public Result[] QualifyingClassification
         {
-            get
-            {
-                if (qualifyingClassification == null)
-                {
-                    var qualifying = sessionData.SessionInfo.Sessions.FirstOrDefault(session => session.SessionType != null
-                        && session.SessionType.IndexOf("qualif", StringComparison.OrdinalIgnoreCase) >= 0);
-                    var drivers = new HashSet<long>(CompetingDrivers.Where(driver => !driver.IsPaceCar && driver.IsSpectator == 0)
-                        .Select(driver => driver.CarIdx));
-                    var results = qualifying == null ? null : qualifying.ResultsPositions;
-                    qualifyingClassification = (results ?? new Result[0])
-                        .Where(result => result.Position > 0 && drivers.Contains(result.CarIdx))
-                        .OrderBy(result => result.Position).ToArray();
-                }
+            get { return qualifyingClassification ?? (qualifyingClassification = ReadClassification("qualif")); }
+        }
 
-                return qualifyingClassification;
-            }
+        public Result[] FinalClassification
+        {
+            get { return finalClassification ?? (finalClassification = ReadClassification("race")); }
+        }
+
+        private Result[] ReadClassification(string sessionType)
+        {
+            var session = sessionData.SessionInfo.Sessions.FirstOrDefault(entry => entry.SessionType != null
+                && entry.SessionType.IndexOf(sessionType, StringComparison.OrdinalIgnoreCase) >= 0);
+            if (session == null || session.ResultsPositions == null)
+                return new Result[0];
+
+            var drivers = new HashSet<long>(CompetingDrivers.Where(driver => !driver.IsPaceCar && driver.IsSpectator == 0)
+                .Select(driver => driver.CarIdx));
+            return session.ResultsPositions.Where(result => result.Position > 0 && drivers.Contains(result.CarIdx))
+                .OrderBy(result => result.Position).ToArray();
         }
 
         public SessionData._DriverInfo._Drivers[] CompetingDrivers

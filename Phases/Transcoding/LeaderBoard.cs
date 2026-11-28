@@ -17,6 +17,7 @@
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 
 using iRacingReplayDirector.Phases.Capturing;
+using System;
 using System.Drawing;
 
 namespace iRacingReplayDirector.Phases.Transcoding
@@ -27,11 +28,13 @@ namespace iRacingReplayDirector.Phases.Transcoding
         public const int DriversPerPage = 10;
 
         PluginProxy plugin;
+        internal bool DisplaysResults { get; private set; }
 
         internal string PluginName
         {
             set
             {
+                DisplaysResults = !string.Equals(value, "NoOverlay", StringComparison.OrdinalIgnoreCase);
                 this.plugin = new PluginProxy(value);
             }
         }

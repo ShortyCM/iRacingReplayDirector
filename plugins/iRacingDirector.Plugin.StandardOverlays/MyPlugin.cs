@@ -10,8 +10,6 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
         const int FlashCardWidth = 900;
         const int FlashCardLeft = (1920 / 2) - FlashCardWidth / 2;
-        const int DriversPerPage = 10;
-
         public void IntroFlashCard(long duration, long timestamp)
         {
             var page = FlashCardPagingCalculator.GetQualifyingPageNumber(EventData.QualifyingClassification.Length, timestamp);
@@ -31,9 +29,9 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
         public void OutroFlashCard(long duration, long timestamp)
         {
-            var page = FlashCardPagingCalculator.GetPageNumber(EventData, DriversPerPage, duration, timestamp);
-
-            DrawOutroFlashCard(page);
+            var page = FlashCardPagingCalculator.GetResultsPageNumber(EventData.FinalClassification.Length, timestamp);
+            if (page >= 0)
+                DrawOutroFlashCard(page);
         }
     }
 }

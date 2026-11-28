@@ -45,8 +45,16 @@ namespace iRacingReplayDirector.Phases.Transcoding
             internal Recording Recording;
             internal double Start;
             internal long Frames;
+            internal long TailHoldFrames;
             internal bool FadeIn;
             internal bool FadeOut;
+            internal long TotalFrames { get { return Frames + TailHoldFrames; } }
+        }
+
+        private sealed class ResultsTiming
+        {
+            internal long StartFrame;
+            internal long Frames;
         }
 
         internal static string Preview(string fileName, VideoAttributes.VideoDetails details, OutputOptions output, Action<long> progress)
@@ -58,7 +66,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             };
             var destination = Path.ChangeExtension(fileName, ".preview." + output.Container);
             var segments = new[] { MakeSegment(recording, 0, Math.Min(10, recording.Media.Duration), recording.Media.FrameRate, true, false) };
-            Encode(segments, recording.Media, destination, output, null, null,
+            Encode(segments, recording.Media, destination, output, null, null, null,
                 progress == null ? (Action<long, long>)null : (time, duration) => progress(time));
             return destination;
         }
@@ -89,18 +97,64 @@ namespace iRacingReplayDirector.Phases.Transcoding
             var cuts = highlights ? data.RaceEvents.GetRaceEdits().OrderBy(cut => cut.StartTime).ToArray() : new VideoEdit[0];
             if (highlights && cuts.Length == 0)
                 throw new InvalidOperationException("No highlight cuts could be calculated. Try a shorter highlight duration.");
+            var eventData = new EventData(data.SessionData);
             var qualifyingDuration = recordings.Any(recording => recording.File.isIntroVideo)
-                ? FlashCardPagingCalculator.GetQualifyingDuration(new EventData(data.SessionData).QualifyingClassification.Length).TotalSeconds
+                ? FlashCardPagingCalculator.GetQualifyingDuration(eventData.QualifyingClassification.Length).TotalSeconds
                 : 0;
+            var resultsStart = data.TimeForOutroOverlay;
+            var resultsDuration = overlay != null && overlay.DisplaysResults && resultsStart.HasValue
+                ? FlashCardPagingCalculator.GetFinalResultsDuration(eventData.FinalClassification.Length).TotalSeconds
+                : 0;
+            if (resultsDuration > 0)
+            {
+                cuts = cuts.Where(cut => cut.StartTime < resultsStart.Value).Select(cut => new VideoEdit
+                {
+                    StartTime = cut.StartTime,
+                    EndTime = Math.Min(cut.EndTime, resultsStart.Value)
+                }).ToArray();
+            }
+
             var segments = recordings.SelectMany(recording => Segments(recording, cuts, main.Media.FrameRate, qualifyingDuration)).ToArray();
-            if (segments.Length == 0)
+            var lastRaceSegment = segments.LastOrDefault(segment => !segment.Recording.File.isIntroVideo);
+            if (lastRaceSegment == null)
                 throw new InvalidOperationException("The highlight cuts removed all recorded video.");
+
+            ResultsTiming results = null;
+            if (resultsDuration > 0)
+            {
+                var frameRate = main.Media.FrameRate;
+                results = new ResultsTiming
+                {
+                    StartFrame = FindResultsStartFrame(segments, resultsStart.Value, frameRate),
+                    Frames = (long)Math.Round(resultsDuration * frameRate)
+                };
+                lastRaceSegment.TailHoldFrames = Math.Max(0, results.StartFrame + results.Frames - segments.Sum(segment => segment.Frames));
+            }
 
             destination = Path.GetFullPath(destination);
             var sources = new HashSet<string>(data.VideoFiles.Select(file => Path.GetFullPath(file.FileName)), StringComparer.OrdinalIgnoreCase);
             while (sources.Contains(destination))
                 destination = Path.ChangeExtension(destination, ".full." + output.Container);
-            Encode(segments, main.Media, destination, output, overlay, isAborted, progress);
+            Encode(segments, main.Media, destination, output, overlay, results, isAborted, progress);
+        }
+
+        private static long FindResultsStartFrame(Segment[] segments, double resultsStart, double frameRate)
+        {
+            long outputFrame = 0;
+            foreach (var segment in segments)
+            {
+                if (!segment.Recording.File.isIntroVideo)
+                {
+                    var sourceTime = segment.Recording.RaceTime + segment.Start;
+                    var firstResultsFrame = Math.Ceiling(Math.Max(0, resultsStart - sourceTime) * frameRate);
+                    if (firstResultsFrame < segment.Frames)
+                        return outputFrame + (long)firstResultsFrame;
+                }
+
+                outputFrame += segment.Frames;
+            }
+
+            return outputFrame;
         }
 
         private static IEnumerable<Segment> Segments(Recording recording, VideoEdit[] cuts, double frameRate, double qualifyingDuration)
@@ -143,7 +197,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
         }
 
         private static void Encode(Segment[] segments, VideoAttributes.VideoDetails main, string destination, OutputOptions output,
-            LeaderBoard overlay, Func<bool> isAborted, Action<long, long> progress)
+            LeaderBoard overlay, ResultsTiming results, Func<bool> isAborted, Action<long, long> progress)
         {
             var width = (main.FrameSize.Width + 1) & ~1;
             var height = (main.FrameSize.Height + 1) & ~1;
@@ -154,7 +208,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             var graph = new List<string>();
             var rate = main.RateExpression;
             var frameRate = main.FrameRate;
-            var totalTicks = Ticks(segments.Sum(segment => segment.Frames) / frameRate);
+            var totalTicks = Ticks(segments.Sum(segment => segment.TotalFrames) / frameRate);
 
             for (var index = 0; index < segments.Length; index++)
                 AddSegment(arguments, graph, segments[index], index, rate, frameRate, size, audio);
@@ -201,7 +255,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
                 arguments.AddRange(new[] { "-strict", "-2", temporary });
 
                 Action<Stream> writeOverlay = overlay == null ? (Action<Stream>)null
-                    : stream => RenderOverlay(stream, size, frameRate, segments, overlay, isAborted);
+                    : stream => RenderOverlay(stream, size, frameRate, segments, overlay, results, isAborted);
                 Ffmpeg.Encode(arguments, writeOverlay, isAborted,
                     progress == null ? (Action<long>)null : ticks => progress(Math.Min(ticks, totalTicks), totalTicks));
                 if (File.Exists(destination))
@@ -221,23 +275,26 @@ namespace iRacingReplayDirector.Phases.Transcoding
         private static void AddSegment(List<string> arguments, List<string> graph, Segment segment, int index,
             string rate, double frameRate, Size size, VideoAttributes.VideoDetails audio)
         {
-            var duration = segment.Frames / frameRate;
+            var sourceDuration = segment.Frames / frameRate;
+            var duration = segment.TotalFrames / frameRate;
             var length = Ffmpeg.Seconds(duration);
             var tag = index.ToString(CultureInfo.InvariantCulture);
-            arguments.AddRange(new[] { "-ss", Ffmpeg.Seconds(segment.Start), "-t", Ffmpeg.Seconds(duration + 1 / frameRate),
+            arguments.AddRange(new[] { "-ss", Ffmpeg.Seconds(segment.Start), "-t", Ffmpeg.Seconds(sourceDuration + 1 / frameRate),
                 "-i", segment.Recording.File.FileName });
 
             var video = "[" + tag + ":v:0]fps=" + rate + ":start_time=0"
                 + ",scale=" + size.Width + ":" + size.Height + ":force_original_aspect_ratio=decrease"
                 + ",pad=" + size.Width + ":" + size.Height + ":(ow-iw)/2:(oh-ih)/2,setsar=1"
-                + ",tpad=stop_mode=clone:stop=" + segment.Frames + ",trim=end_frame=" + segment.Frames + ",setpts=PTS-STARTPTS";
+                + (segment.TailHoldFrames > 0 ? ",trim=end_frame=" + segment.Frames : "")
+                + ",tpad=stop_mode=clone:stop=" + segment.TotalFrames + ",trim=end_frame=" + segment.TotalFrames + ",setpts=PTS-STARTPTS";
             graph.Add(video + "[v" + tag + "]");
             if (audio == null)
                 return;
 
             var sampleRate = audio.AudioSamplesPerSecond > 0 ? audio.AudioSamplesPerSecond : 48000;
             var audioInput = segment.Recording.Media.HasAudio
-                ? "[" + tag + ":a:0]aresample=" + sampleRate + ":async=1:first_pts=0,aformat=channel_layouts=" + audio.AudioLayout + ",apad=whole_dur=" + length
+                ? "[" + tag + ":a:0]aresample=" + sampleRate + ":async=1:first_pts=0,aformat=channel_layouts=" + audio.AudioLayout
+                    + (segment.TailHoldFrames > 0 ? ",atrim=duration=" + Ffmpeg.Seconds(sourceDuration) : "") + ",apad=whole_dur=" + length
                 : "anullsrc=r=" + sampleRate + ":cl=" + audio.AudioLayout + ":d=" + length;
             graph.Add(audioInput + ",atrim=duration=" + length + ",asetpts=PTS-STARTPTS"
                 + Fades(segment, duration, "afade") + "[a" + tag + "]");
@@ -257,7 +314,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             foreach (var segment in segments)
             {
                 var start = offset / frameRate;
-                offset += segment.Frames;
+                offset += segment.TotalFrames;
                 var end = offset / frameRate;
                 var length = Math.Min(1, (end - start) / 2);
 
@@ -292,29 +349,30 @@ namespace iRacingReplayDirector.Phases.Transcoding
         }
 
         private static void RenderOverlay(Stream output, Size size, double frameRate, Segment[] segments,
-            LeaderBoard renderer, Func<bool> isAborted)
+            LeaderBoard renderer, ResultsTiming results, Func<bool> isAborted)
         {
             var rowBytes = checked(size.Width * 4);
             var buffer = new byte[checked(rowBytes * size.Height)];
             var bounds = new Rectangle(Point.Empty, size);
             using (var bitmap = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb))
             {
+                long outputFrame = 0;
                 foreach (var segment in segments)
                 {
                     var recording = segment.Recording;
-                    for (long frame = 0; frame < segment.Frames; frame++)
+                    for (long frame = 0; frame < segment.TotalFrames; frame++, outputFrame++)
                     {
                         if (isAborted != null && isAborted())
                             throw new OperationCanceledException();
 
-                        var timestamp = recording.RaceTime + segment.Start + frame / frameRate;
+                        var timestamp = recording.RaceTime + segment.Start + Math.Min(frame, segment.Frames - 1) / frameRate;
                         using (var graphics = Graphics.FromImage(bitmap))
                         {
                             graphics.Clear(Color.Transparent);
                             if (recording.File.isIntroVideo)
                                 renderer.Intro(graphics, Ticks(segment.Frames / frameRate), Ticks(timestamp));
                             else
-                                DrawRaceOverlay(renderer, graphics, timestamp, segments);
+                                DrawRaceOverlay(renderer, graphics, timestamp, outputFrame, frameRate, results);
                         }
                         var pixels = bitmap.LockBits(bounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                         try
@@ -335,19 +393,19 @@ namespace iRacingReplayDirector.Phases.Transcoding
             }
         }
 
-        private static void DrawRaceOverlay(LeaderBoard renderer, Graphics graphics, double time, Segment[] segments)
+        private static void DrawRaceOverlay(LeaderBoard renderer, Graphics graphics, double time, long outputFrame,
+            double frameRate, ResultsTiming results)
         {
-            var outro = renderer.OverlayData.TimeForOutroOverlay;
-            if (!outro.HasValue || time < outro.Value)
+            if (results == null || outputFrame < results.StartFrame)
             {
                 renderer.Overlay(graphics, Ticks(time));
                 return;
             }
-            if (time - outro.Value > 30)
-                return;
-            var last = segments.Last(segment => !segment.Recording.File.isIntroVideo).Recording;
-            var duration = Math.Min(30, last.RaceTime + last.Media.Duration - outro.Value);
-            renderer.Outro(graphics, Ticks(duration), Ticks(time), Ticks(time - outro.Value));
+
+            // Time the pages in the exported video so a split or missing footage cannot shorten a page.
+            var elapsed = outputFrame - results.StartFrame;
+            if (elapsed < results.Frames)
+                renderer.Outro(graphics, Ticks(results.Frames / frameRate), Ticks(time), Ticks(elapsed / frameRate));
         }
 
         private static long Ticks(double seconds)

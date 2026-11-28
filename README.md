@@ -45,6 +45,8 @@ have their own cards.
 
 Qualifying shows 10 drivers per page for 10 seconds. A final page with up to
 five drivers gets 5 seconds when it follows another page.
+Final race results also show 10 drivers per page for 10 seconds, with 5 seconds
+for a last page of up to five drivers.
 
 Use **F1-style class labels** to supply display names for class IDs. Enter
 comma-separated assignments such as `2523=LMP2,4011=GT3`. New captures

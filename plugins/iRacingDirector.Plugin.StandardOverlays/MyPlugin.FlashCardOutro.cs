@@ -17,8 +17,8 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
         void DrawFlashCardOutro(GraphicRect r, int page)
         {
-            var rsession = EventData.Race;
-            var results = EventData.Results;
+            var results = EventData.FinalClassification;
+            var pageSize = FlashCardPagingCalculator.ResultsDriversPerPage;
 
             var offset = 5;
             Graphics.InRectangle(FlashCardLeft, r.Rectangle.Top, FlashCardWidth, 10)
@@ -27,9 +27,9 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
             var LeaderTime = TimeSpan.FromSeconds(results[0].Time);
 
-            foreach (var racerResult in results.Skip(DriversPerPage * page).Take(DriversPerPage))
+            foreach (var racerResult in results.Skip(pageSize * page).Take(pageSize))
             {
-                var driver = EventData.GetCompetingDriverByIndex(racerResult.CarIdx);
+                var driver = EventData.CompetingDrivers.First(entry => entry.CarIdx == racerResult.CarIdx);
 
                 var Gap = TimeSpan.FromSeconds(racerResult.Time) - LeaderTime; // Gap calculation
                 if (Gap == TimeSpan.Zero) //For the leader we want to display the race duration
