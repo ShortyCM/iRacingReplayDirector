@@ -43,6 +43,9 @@ holder and time. The overlay also shows pit entry and exit, and TeamRadio
 when the replay supplies a transmitting driver. Qualifying and final results
 have their own cards.
 
+Qualifying shows 10 drivers per page for 10 seconds. A final page with up to
+five drivers gets 5 seconds when it follows another page.
+
 Use **F1-style class labels** to supply display names for class IDs. Enter
 comma-separated assignments such as `2523=LMP2,4011=GT3`. New captures
 save the timing and event history used by these panels. Captures made before

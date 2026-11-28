@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 
+using iRacingDirector.Plugin;
 using iRacingReplayDirector.Phases.Capturing;
 using iRacingReplayDirector.Video;
 using System;
@@ -88,7 +89,10 @@ namespace iRacingReplayDirector.Phases.Transcoding
             var cuts = highlights ? data.RaceEvents.GetRaceEdits().OrderBy(cut => cut.StartTime).ToArray() : new VideoEdit[0];
             if (highlights && cuts.Length == 0)
                 throw new InvalidOperationException("No highlight cuts could be calculated. Try a shorter highlight duration.");
-            var segments = recordings.SelectMany(recording => Segments(recording, cuts, main.Media.FrameRate)).ToArray();
+            var qualifyingDuration = recordings.Any(recording => recording.File.isIntroVideo)
+                ? FlashCardPagingCalculator.GetQualifyingDuration(new EventData(data.SessionData).QualifyingClassification.Length).TotalSeconds
+                : 0;
+            var segments = recordings.SelectMany(recording => Segments(recording, cuts, main.Media.FrameRate, qualifyingDuration)).ToArray();
             if (segments.Length == 0)
                 throw new InvalidOperationException("The highlight cuts removed all recorded video.");
 
@@ -99,11 +103,12 @@ namespace iRacingReplayDirector.Phases.Transcoding
             Encode(segments, main.Media, destination, output, overlay, isAborted, progress);
         }
 
-        private static IEnumerable<Segment> Segments(Recording recording, VideoEdit[] cuts, double frameRate)
+        private static IEnumerable<Segment> Segments(Recording recording, VideoEdit[] cuts, double frameRate, double qualifyingDuration)
         {
             if (recording.File.isIntroVideo)
             {
-                yield return MakeSegment(recording, 0, recording.Media.Duration, frameRate, true, true);
+                var duration = qualifyingDuration > 0 ? qualifyingDuration : recording.Media.Duration;
+                yield return MakeSegment(recording, 0, duration, frameRate, true, true);
                 yield break;
             }
 
@@ -307,7 +312,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
                         {
                             graphics.Clear(Color.Transparent);
                             if (recording.File.isIntroVideo)
-                                renderer.Intro(graphics, Ticks(recording.Media.Duration), Ticks(timestamp));
+                                renderer.Intro(graphics, Ticks(segment.Frames / frameRate), Ticks(timestamp));
                             else
                                 DrawRaceOverlay(renderer, graphics, timestamp, segments);
                         }

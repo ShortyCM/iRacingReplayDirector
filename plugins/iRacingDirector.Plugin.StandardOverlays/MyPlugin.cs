@@ -14,9 +14,9 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
         public void IntroFlashCard(long duration, long timestamp)
         {
-            var page = FlashCardPagingCalculator.GetPageNumber(EventData, DriversPerPage, duration, timestamp);
-
-            DrawIntroFlashCard(page);
+            var page = FlashCardPagingCalculator.GetQualifyingPageNumber(EventData.QualifyingClassification.Length, timestamp);
+            if (page >= 0)
+                DrawIntroFlashCard(page);
         }
 
         public void RaceOverlay(long timestamp)

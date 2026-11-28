@@ -2,13 +2,14 @@ using System;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using iRacingDirector.Plugin;
 using Result = iRacingSDK.SessionData._SessionInfo._Sessions._ResultsPositions;
 
 namespace iRacingDirector.Plugin.F1Style
 {
     public partial class MyPlugin
     {
-        private const int ResultsPageSize = 11;
+        private const int RaceResultsPageSize = 11;
 
         public void IntroFlashCard(long duration, long timestamp)
         {
@@ -23,19 +24,15 @@ namespace iRacingDirector.Plugin.F1Style
         private void DrawClassification(bool qualifying, long duration, long timestamp)
         {
             ReadSession();
-            var session = EventData.Raw.SessionInfo.Sessions.FirstOrDefault(s => s.SessionType != null &&
-                s.SessionType.IndexOf(qualifying ? "qualif" : "race", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (session == null || session.ResultsPositions == null)
-                return;
-
-            var results = session.ResultsPositions.Where(row => row.Position > 0 && DriverAt(row.CarIdx) != null)
-                .OrderBy(row => row.Position).ToArray();
+            var results = qualifying ? EventData.QualifyingClassification : FinalClassification();
             if (results.Length == 0)
                 return;
 
-            var pageCount = (results.Length + ResultsPageSize - 1) / ResultsPageSize;
+            var pageSize = qualifying ? FlashCardPagingCalculator.QualifyingDriversPerPage : RaceResultsPageSize;
+            var pageCount = (results.Length + pageSize - 1) / pageSize;
             var progress = duration > 0 ? Math.Min(1, Math.Max(0, (double)timestamp / duration)) : 0;
-            var page = Math.Min(pageCount - 1, (int)(progress * pageCount));
+            var page = qualifying ? FlashCardPagingCalculator.GetQualifyingPageNumber(results.Length, timestamp)
+                : Math.Min(pageCount - 1, (int)(progress * pageCount));
             OnCanvas(() =>
             {
                 Block(Black, new RectangleF(278, 121, 724, 47));
@@ -46,7 +43,7 @@ namespace iRacingDirector.Plugin.F1Style
                 if (pageCount > 1)
                     Text((page + 1) + " / " + pageCount, Regular, Muted, new RectangleF(866, 174, 119, 32), RightText);
 
-                var entries = results.Skip(page * ResultsPageSize).Take(ResultsPageSize).ToArray();
+                var entries = results.Skip(page * pageSize).Take(pageSize).ToArray();
                 for (var i = 0; i < entries.Length; i++)
                 {
                     var result = entries[i];
@@ -72,6 +69,17 @@ namespace iRacingDirector.Plugin.F1Style
                 Text(qualifying ? QualifyingFooter() : RaceFooter(results), Regular, Color.White,
                     new RectangleF(294, footerTop, 691, 30));
             });
+        }
+
+        private Result[] FinalClassification()
+        {
+            var race = EventData.Raw.SessionInfo.Sessions.FirstOrDefault(session => session.SessionType != null
+                && session.SessionType.IndexOf("race", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (race == null || race.ResultsPositions == null)
+                return new Result[0];
+
+            return race.ResultsPositions.Where(row => row.Position > 0 && DriverAt(row.CarIdx) != null)
+                .OrderBy(row => row.Position).ToArray();
         }
 
         private string QualifyingFooter()

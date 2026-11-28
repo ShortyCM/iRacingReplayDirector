@@ -17,6 +17,7 @@
 // along with iRacingReplayDirector.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using iRacingDirector.Plugin;
 using iRacingReplayDirector.Phases.Direction;
 using iRacingSDK;
 using iRacingSDK.Support;
@@ -31,8 +32,9 @@ namespace iRacingReplayDirector.Phases
         void _CaptureOpeningScenes(Action onComplete)
         {
             var data = iRacing.GetDataFeed().First();
-            var session = data.SessionData.SessionInfo.Sessions.Qualifying();
-            if (session == null || session.ResultsPositions == null)
+            var results = new EventData(data.SessionData).QualifyingClassification;
+            var duration = FlashCardPagingCalculator.GetQualifyingDuration(results.Length);
+            if (duration == TimeSpan.Zero)
                 return;
 
             if (!iRacing.Replay.AttempToMoveToQualifyingSection())
@@ -59,7 +61,7 @@ namespace iRacingReplayDirector.Phases
 
             var videoCapture = new VideoCapture();
             videoCapture.Activate(workingFolder);
-            Thread.Sleep(shortTestOnly ? 5000 : 20000);
+            Thread.Sleep(duration);
 
             var fileNames = videoCapture.Deactivate();
             if (fileNames.Count == 0)

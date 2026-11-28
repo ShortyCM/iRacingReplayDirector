@@ -19,7 +19,8 @@ namespace iRacingDirector.Plugin.StandardOverlays
             var left = FlashCardLeft;
             var right = left + totalWidth - 30;
 
-            var thisPageOfQualifyingResults = EventData.QualifyingResults.Skip(page * DriversPerPage).Take(DriversPerPage);
+            var pageSize = FlashCardPagingCalculator.QualifyingDriversPerPage;
+            var thisPageOfQualifyingResults = EventData.QualifyingClassification.Skip(page * pageSize).Take(pageSize);
 
             var offset = 5;
             Graphics.InRectangle(left, r.Rectangle.Top, totalWidth, 10)
@@ -28,7 +29,7 @@ namespace iRacingDirector.Plugin.StandardOverlays
 
             foreach (var qualifier in thisPageOfQualifyingResults)
             {
-                var driver = EventData.GetCompetingDriverByIndex(qualifier.CarIdx);
+                var driver = EventData.CompetingDrivers.First(entry => entry.CarIdx == qualifier.CarIdx);
 
                 var carNumberColumn = r.Center(cg => cg
                             .DrawText(qualifier.Position.ToString())
