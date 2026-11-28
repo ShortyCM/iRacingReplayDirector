@@ -38,11 +38,18 @@ F1-style overlay
 
 Select **F1-style** under **Configure General Settings → Overlay**. The overlay
 uses a left leaderboard with up to 20 drivers and a two- or three-driver gap
-bar at the bottom based on the camera car. If the camera car is outside the
-top 20, it takes the last leaderboard row. The Fastest Lap card shows a
-class's record holder and time. The overlay also shows pit entry and exit, and
+bar at the bottom based on the camera car. The Fastest Lap card shows a class's
+record holder and time. The overlay also shows pit entry and exit, and
 TeamRadio when the replay supplies a transmitting driver. Qualifying and final
 results have their own cards.
+
+The leaderboard cycles through the remaining drivers every 10 seconds after
+pinning the leaders. Single-class races pin the top 10 and page through the rest
+in rows 11–20. Two classes get 10 rows each with five leaders pinned. Three
+classes get 7, 7, and 6 rows with three leaders pinned per class. Classes are
+ordered by the SDK's relative speed value, breaking ties by class ID. Four or
+more classes use the overall leaderboard with the camera car in the last row
+when it falls outside the top 20.
 
 Qualifying shows 10 drivers per page for 10 seconds. A final page with up to
 five drivers gets 5 seconds when it follows another page.

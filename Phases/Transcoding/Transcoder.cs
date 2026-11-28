@@ -357,6 +357,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
             using (var bitmap = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb))
             {
                 long outputFrame = 0;
+                long raceFrame = 0;
                 foreach (var segment in segments)
                 {
                     var recording = segment.Recording;
@@ -372,7 +373,7 @@ namespace iRacingReplayDirector.Phases.Transcoding
                             if (recording.File.isIntroVideo)
                                 renderer.Intro(graphics, Ticks(segment.Frames / frameRate), Ticks(timestamp));
                             else
-                                DrawRaceOverlay(renderer, graphics, timestamp, outputFrame, frameRate, results);
+                                DrawRaceOverlay(renderer, graphics, timestamp, outputFrame, raceFrame++, frameRate, results);
                         }
                         var pixels = bitmap.LockBits(bounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                         try
@@ -394,11 +395,11 @@ namespace iRacingReplayDirector.Phases.Transcoding
         }
 
         private static void DrawRaceOverlay(LeaderBoard renderer, Graphics graphics, double time, long outputFrame,
-            double frameRate, ResultsTiming results)
+            long raceFrame, double frameRate, ResultsTiming results)
         {
             if (results == null || outputFrame < results.StartFrame)
             {
-                renderer.Overlay(graphics, Ticks(time));
+                renderer.Overlay(graphics, Ticks(time), Ticks(raceFrame / frameRate));
                 return;
             }
 

@@ -11,6 +11,8 @@ namespace iRacingDirector.Plugin.F1Style
     {
         private const int GapBarTop = 658;
         private const int GapBarHeight = 27;
+        private const int LeaderboardRows = 20;
+        private const long LeaderboardPageDuration = 10 * TimeSpan.TicksPerSecond;
 
         private sealed class Standing
         {
@@ -24,6 +26,11 @@ namespace iRacingDirector.Plugin.F1Style
 
         public void RaceOverlay(long timestamp)
         {
+            RaceOverlay(timestamp, timestamp);
+        }
+
+        public void RaceOverlay(long timestamp, long elapsed)
+        {
             ReadSession();
             var seconds = TimeSpan.FromTicks(timestamp).TotalSeconds;
             UpdateClassRecords(seconds);
@@ -35,7 +42,7 @@ namespace iRacingDirector.Plugin.F1Style
 
                 var leaderboardState = Graphics.Save();
                 Graphics.TranslateTransform(47.5f, 0);
-                DrawLeaderboard(standings, focusId);
+                DrawLeaderboard(standings, focusId, elapsed);
                 Graphics.Restore(leaderboardState);
 
                 DrawGaps(standings, seconds);
@@ -63,7 +70,53 @@ namespace iRacingDirector.Plugin.F1Style
                 }).ToArray();
         }
 
-        private void DrawLeaderboard(Standing[] standings, long focusId)
+        private Standing[] GetLeaderboardRows(Standing[] standings, Standing focused, long elapsed)
+        {
+            var rows = new Standing[LeaderboardRows];
+            var page = Math.Max(0, elapsed) / LeaderboardPageDuration;
+            if (!multiclass)
+            {
+                FillLeaderboardSection(standings, rows, 0, LeaderboardRows, 10, page);
+            }
+            else if ((classOrder.Length == 2 || classOrder.Length == 3) && standings.All(s => s.Driver.DriverDetails != null))
+            {
+                var byClass = standings.ToLookup(s => s.Driver.DriverDetails.CarClassID);
+                var sectionRows = classOrder.Length == 2 ? 10 : 7;
+                var pinnedRows = classOrder.Length == 2 ? 5 : 3;
+                for (var i = 0; i < classOrder.Length; i++)
+                {
+                    var startRow = i * sectionRows;
+                    var rowCount = Math.Min(sectionRows, LeaderboardRows - startRow);
+                    FillLeaderboardSection(byClass[classOrder[i]].ToArray(), rows, startRow, rowCount, pinnedRows, page);
+                }
+            }
+            else
+            {
+                Array.Copy(standings, rows, Math.Min(standings.Length, rows.Length));
+                if (focused != null && standings.Length > rows.Length && !rows.Contains(focused))
+                    rows[rows.Length - 1] = focused;
+            }
+
+            return rows;
+        }
+
+        private static void FillLeaderboardSection(Standing[] standings, Standing[] rows, int startRow, int rowCount,
+            int pinnedRows, long page)
+        {
+            if (standings.Length <= rowCount)
+            {
+                Array.Copy(standings, 0, rows, startRow, standings.Length);
+                return;
+            }
+
+            var pageSize = rowCount - pinnedRows;
+            var pageCount = (standings.Length - pinnedRows + pageSize - 1) / pageSize;
+            var pageStart = pinnedRows + (int)(page % pageCount) * pageSize;
+            Array.Copy(standings, 0, rows, startRow, pinnedRows);
+            Array.Copy(standings, pageStart, rows, startRow + pinnedRows, Math.Min(pageSize, standings.Length - pageStart));
+        }
+
+        private void DrawLeaderboard(Standing[] standings, long focusId, long elapsed)
         {
             const int width = 205;
             if (standings.Length == 0)
@@ -84,15 +137,15 @@ namespace iRacingDirector.Plugin.F1Style
             }
 
             var firstDriverRow = showLapRow ? 118 : 93;
-            const int maxRows = 20;
-            var visible = standings.Take(maxRows).ToArray();
             var focused = standings.FirstOrDefault(s => s.Driver.DriverDetails != null && s.Driver.DriverDetails.CarIdx == focusId);
-            if (focused != null && standings.Length > maxRows && !visible.Contains(focused))
-                visible[maxRows - 1] = focused;
+            var visible = GetLeaderboardRows(standings, focused, elapsed);
 
             for (var i = 0; i < visible.Length; i++)
             {
                 var standing = visible[i];
+                if (standing == null)
+                    continue;
+
                 var driver = standing.Driver;
                 var position = multiclass ? standing.ClassPosition : driver.Position.Value;
                 var row = new RectangleF(0, firstDriverRow + i * 25, width, 24);

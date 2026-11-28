@@ -31,6 +31,7 @@ namespace iRacingReplayDirector
 
         dynamic plugin;
         Type pluginType;
+        readonly Action<long, long> timedRaceOverlay;
         OverlayData data;
         long timestamp;
         readonly Func<Type, object> CreateInstance = t => Activator.CreateInstance(t);
@@ -75,6 +76,10 @@ namespace iRacingReplayDirector
                     .FirstOrDefault(t => t.FullName.EndsWith(".MyPlugin"));
 
                 plugin = Activator.CreateInstance(pluginType);
+
+                var timedOverlay = pluginType.GetMethod("RaceOverlay", new[] { typeof(long), typeof(long) });
+                if (timedOverlay != null && !timedOverlay.IsStatic && timedOverlay.ReturnType == typeof(void))
+                    timedRaceOverlay = (Action<long, long>)timedOverlay.CreateDelegate(typeof(Action<long, long>), (object)plugin);
 
                 var x = assembly.GetTypes();
 
@@ -334,6 +339,14 @@ namespace iRacingReplayDirector
         public void RaceOverlay()
         {
             plugin.RaceOverlay(timestamp);
+        }
+
+        internal void RaceOverlay(long elapsed)
+        {
+            if (timedRaceOverlay != null)
+                timedRaceOverlay(timestamp, elapsed);
+            else
+                RaceOverlay();
         }
     }
 }

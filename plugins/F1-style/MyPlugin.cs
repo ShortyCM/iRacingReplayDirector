@@ -47,6 +47,7 @@ namespace iRacingDirector.Plugin.F1Style
         private EventData currentEvent;
         private Dictionary<long, SessionDriver> drivers;
         private Dictionary<long, ClassStyle> styles;
+        private long[] classOrder;
         private bool multiclass;
 
         private sealed class ClassStyle
@@ -64,6 +65,8 @@ namespace iRacingDirector.Plugin.F1Style
             var entries = EventData.CompetingDrivers.Where(d => !d.IsPaceCar && d.IsSpectator == 0);
             drivers = entries.GroupBy(d => d.CarIdx).ToDictionary(d => d.Key, d => d.First());
             var groups = drivers.Values.GroupBy(d => d.CarClassID).ToArray();
+            classOrder = groups.OrderByDescending(group => group.Max(d => d.CarClassRelSpeed))
+                .ThenBy(group => group.Key).Select(group => group.Key).ToArray();
             multiclass = groups.Length > 1 || EventData.WeekendInfo.NumCarClasses > 1;
             var overrides = new Dictionary<long, string>();
             foreach (var item in (ClassLabels ?? "").Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))

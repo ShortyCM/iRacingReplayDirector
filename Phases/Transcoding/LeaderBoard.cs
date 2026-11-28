@@ -53,10 +53,15 @@ namespace iRacingReplayDirector.Phases.Transcoding
 
         public void Overlay(Graphics graphics, long timestamp)
         {
+            Overlay(graphics, timestamp, timestamp);
+        }
+
+        internal void Overlay(Graphics graphics, long timestamp, long elapsed)
+        {
             plugin.SetReplayConfig(OverlayData);
             plugin.SetGraphics(graphics);
             plugin.InjectFields(timestamp, Settings.Default.PreferredDriverNames.Split(new char[] { ',', ';' }));
-            plugin.RaceOverlay();
+            plugin.RaceOverlay(elapsed);
         }
 
         public void Outro(Graphics graphics, long duration, long timestamp, long period)
