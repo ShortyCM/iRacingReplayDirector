@@ -61,11 +61,22 @@ namespace iRacingDirector.Plugin.F1Style
             if (standings.Length == 0)
                 return;
 
-            Block(Black, new RectangleF(95, 67, 205, 25));
-            Text(LeaderBoard.RacePosition ?? LeaderBoard.LapCounter, Bold, Color.White,
-                new RectangleF(103, 67, 191, 25));
+            var racePosition = FormatRacePosition(LeaderBoard.RacePosition);
+            var lapCounter = LeaderBoard.LapCounter;
+            var showLapRow = !string.IsNullOrWhiteSpace(racePosition) && !string.IsNullOrWhiteSpace(lapCounter)
+                && !string.Equals(racePosition, lapCounter, StringComparison.Ordinal);
 
-            const int maxRows = 20;
+            Block(Black, new RectangleF(95, 67, 205, 25));
+            Text(string.IsNullOrWhiteSpace(racePosition) ? lapCounter : racePosition, Bold, Color.White,
+                new RectangleF(103, 67, 191, 25));
+            if (showLapRow)
+            {
+                Block(Grey, new RectangleF(95, 93, 205, 24));
+                Text(lapCounter, Bold, Color.White, new RectangleF(103, 93, 191, 24));
+            }
+
+            var firstDriverRow = showLapRow ? 118 : 93;
+            var maxRows = showLapRow ? 19 : 20;
             var visible = standings.Take(maxRows).ToArray();
             var focused = standings.FirstOrDefault(s => s.Driver.DriverDetails != null && s.Driver.DriverDetails.CarIdx == focusId);
             if (focused != null && standings.Length > maxRows && !visible.Contains(focused))
@@ -76,7 +87,7 @@ namespace iRacingDirector.Plugin.F1Style
                 var standing = visible[i];
                 var driver = standing.Driver;
                 var position = multiclass ? standing.ClassPosition : driver.Position.Value;
-                var row = new RectangleF(95, 93 + i * 25, 205, 24);
+                var row = new RectangleF(95, firstDriverRow + i * 25, 205, 24);
                 var background = standing == focused ? Color.FromArgb(242, 64, 64, 64) : i % 2 == 0 ? Dark : Grey;
                 DriverRow(row, position, Accent(driver.DriverDetails, driver.Position.Value), background, 42);
 
@@ -91,6 +102,16 @@ namespace iRacingDirector.Plugin.F1Style
                     Text(driver.PitStopCount.ToString(CultureInfo.InvariantCulture) + "P", Small, Muted,
                         new RectangleF(273, row.Y, 22, row.Height), RightText);
             }
+        }
+
+        private static string FormatRacePosition(string position)
+        {
+            TimeSpan remaining;
+            if (TimeSpan.TryParseExact(position, @"hh\:mm\:ss", CultureInfo.InvariantCulture, out remaining)
+                && remaining.Hours == 0)
+                return remaining.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+
+            return position;
         }
 
         private void DrawPositionBar(Standing[] standings, double seconds, long focusId)
